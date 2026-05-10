@@ -1,0 +1,65 @@
+Get Data from lsblk -f
+
+❯ lsblk -f
+NAME        FSTYPE FSVER LABEL            UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+sda                                                                                           
+├─sda1      ntfs         System Reserved  784CA65E4CA61742                                    
+└─sda2      ntfs         MASS STORAGE HDD 48FCE566FCE54EAE                      223.5G    76% /run/media/caroline/MASS STORAGE HDD
+sdb                                                                                           
+├─sdb1                                                                                        
+└─sdb2      ntfs         New Volume       E2EA1BA8EA1B784D                       63.6G    87% /run/media/caroline/New Volume1
+sdc                                                                                           
+├─sdc1                                                                                        
+└─sdc2      ntfs         SSD              64BA7A1CBA79EB46                       10.7G    98% /run/media/caroline/SSD
+sdd                                                                                           
+└─sdd1      ext4   1.0   240SSD           651c477e-3008-4344-8c74-01340ff633fc  152.4G    25% /run/media/caroline/240SSD
+zram0       swap   1     zram0            a26ab195-ddeb-40ac-822f-ddade610b8b1                [SWAP]
+nvme1n1                                                                                       
+├─nvme1n1p1                                                                                   
+├─nvme1n1p2 ntfs                          B256FDEB56FDAFE9                       84.6G    91% /run/media/caroline/B256FDEB56FDAFE9
+├─nvme1n1p3 vfat   FAT32 BOOT FILES       00BB-F26E                                95M     0% /run/media/caroline/BOOT FILES
+└─nvme1n1p4 ntfs                          1856543A56541B38                                    
+nvme0n1                                                                                       
+├─nvme0n1p1                                                                                   
+└─nvme0n1p2 ntfs         New Volume       FA1C05EC1C05A4AB                       64.8G    93% /run/media/caroline/New Volume
+nvme2n1                                                                                       
+├─nvme2n1p1 vfat   FAT32                  3ABC-0062                             311.9M    85% /boot
+└─nvme2n1p2 btrfs                         05683095-7135-4ca2-8309-b460782043d3  364.3G    60% /var/cache
+                                                                                              /root
+                                                                                              /home
+                                                                                              /var/log                                                                                       /var/tmp
+                                                                                              /srv
+                                                                                              /
+                                                                                              
+parse based on spacing, and UUID, name, Label and drive type.       
+
+sudo fdisk -l might also be need to get additonal drive info to dsplay to user.
+
+SystemD File to be created.
+
+[Unit]
+Description=
+
+[Mount]
+What=
+Where=
+Type=
+Options=
+
+[Install]
+WantedBy=multi-user.target
+
+// Mapping
+Descripton= Set by user
+What=UUID= drive uuid (hide from user)
+Where= Set by user, but point at /home/user/...
+Type= Parsed for fdisk
+Option= user input (defaults,exec,rw,noatime)
+
+Will be ran after
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now home-$USER-games.mount
+
+https://wiki.cachyos.org/configuration/automount_with_fstab/#safer-and-beginner-friendly-method-mounting-drives-with-systemd-mount-files
+

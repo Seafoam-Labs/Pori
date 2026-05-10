@@ -1,0 +1,7 @@
+.overlay-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.lockout-overlay {
+    background-color: alpha(@theme_bg_color, 0.9);
+}
