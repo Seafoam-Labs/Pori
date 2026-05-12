@@ -30,8 +30,8 @@ build() {
 package() {
   cd "$srcdir/Sponge-${pkgver}"
 
-  # Install shelly-ui binary
-  install -Dm755 out/shelly-ui "$pkgdir/usr/bin/sponge"
+  # Install sponge binary
+  install -Dm755 out/sponge "$pkgdir/usr/bin/sponge"
 
   # Install desktop entry
   cat <<'EOF' | install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/com.sponge.app.desktop"
