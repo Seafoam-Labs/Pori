@@ -17,7 +17,7 @@
 
     <PropertyGroup>
         <Version>0.0.1</Version>
-        <AssemblyName>shelly-ui</AssemblyName>
+        <AssemblyName>sponge</AssemblyName>
         <AssemblyVersion>0.0.1</AssemblyVersion>
         <AssemblyTitle>Sponge</AssemblyTitle>
         <Description>Spone</Description>

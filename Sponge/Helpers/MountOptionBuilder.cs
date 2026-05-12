@@ -2,7 +2,7 @@ using Gtk;
 
 namespace Sponge.Helpers;
 
-public class MountOptionBuilder
+public static class MountOptionBuilder
 {
     private record MountOption(string Option, string Description, bool Selected = true);
 
