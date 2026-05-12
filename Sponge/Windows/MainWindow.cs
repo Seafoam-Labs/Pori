@@ -17,19 +17,17 @@ public class MainWindow
     private readonly IFStabParser _fStabParser;
     private readonly ICredentialManager _credentialManager;
     private readonly PasswordDialog _passwordDialog;
-    private readonly NtfsWarning _ntfsWarning;
-    private Widget? _overlayWidget;
 
     public List<FStabModel> FStabModels { get; private set; } = [];
 
-    public MainWindow(IUnPrivOpService unPrivOpService, IPrivOpService privOpService, IFStabParser fStabParser, ICredentialManager credentialManager, PasswordDialog passwordDialog, NtfsWarning ntfsWarning)
+    public MainWindow(IUnPrivOpService unPrivOpService, IPrivOpService privOpService, IFStabParser fStabParser, ICredentialManager credentialManager, PasswordDialog passwordDialog)
     {
         _unPrivOpService = unPrivOpService;
         _privOpService = privOpService;
         _fStabParser = fStabParser;
         _credentialManager = credentialManager;
         _passwordDialog = passwordDialog;
-        _ntfsWarning = ntfsWarning;
+       
 
         _credentialManager.CredentialRequested += OnCredentialRequested;
 
@@ -86,138 +84,47 @@ public class MainWindow
             }
             else
             {
-                ShowMountOverlay(model);
+                _ = ShowMountDialog(model);
             }
         }
     }
 
     private async Task ShowNtfsWarningThenMount(FStabModel model)
     {
-        var proceed = await _ntfsWarning.ShowNtfsWarningAsync(_mainOverlay);
+        var proceed = await NtfsWarning.ShowNtfsWarningAsync(_mainOverlay);
         if (proceed)
         {
-            ShowMountOverlay(model);
+            await ShowMountDialog(model);
         }
     }
 
-    private void ShowMountOverlay(FStabModel model)
+    private async Task ShowMountDialog(FStabModel model)
     {
-        DismissMountOverlay();
-        
-        var backdrop = Box.New(Orientation.Vertical, 0);
-        backdrop.SetHexpand(true);
-        backdrop.SetVexpand(true);
-        backdrop.SetHalign(Align.Fill);
-        backdrop.SetValign(Align.Fill);
-        backdrop.AddCssClass("overlay-backdrop");
-        
-        var card = Frame.New(null);
-        card.AddCssClass("card");
-        card.SetHalign(Align.Center);
-        card.SetValign(Align.Center);
-        card.SetHexpand(true);
-        card.SetVexpand(true);
-        card.SetSizeRequest(450, -1);
+        var result = await MountOptionsDialog.ShowMountOptionsAsync(_mainOverlay, model);
+        if (result == null)
+            return;
 
-        var content = Box.New(Orientation.Vertical, 12);
-        content.SetMarginTop(20);
-        content.SetMarginBottom(20);
-        content.SetMarginStart(20);
-        content.SetMarginEnd(20);
-
-        var heading = Label.New($"Mount {model.Name}");
-        heading.AddCssClass("heading");
-        heading.SetXalign(0);
-        content.Append(heading);
-
-        var infoBox = Box.New(Orientation.Vertical, 4);
-        AddOverlayField(infoBox, "Device", model.Name);
-        AddOverlayField(infoBox, "Type", model.FsType);
-        AddOverlayField(infoBox, "UUID", model.Uuid);
-        content.Append(infoBox);
-
-        var sep = Separator.New(Orientation.Horizontal);
-        content.Append(sep);
-
-        var mountLabel = Label.New("Mount Point:");
-        mountLabel.SetXalign(0);
-        content.Append(mountLabel);
-
-        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var mountEntry = Entry.New();
-        mountEntry.SetText($"{homeDir}/mnt/{model.Name}");
-        mountEntry.SetHexpand(true);
-        content.Append(mountEntry);
-
-        var descLabel = Label.New("Description (optional):");
-        descLabel.SetXalign(0);
-        content.Append(descLabel);
-
-        var descEntry = Entry.New();
-        descEntry.SetPlaceholderText("e.g. Games drive, Backup disk");
-        descEntry.SetHexpand(true);
-        content.Append(descEntry);
-
-        var optionsLabel = Label.New("Mount Options (optional):");
-        optionsLabel.SetXalign(0);
-        content.Append(optionsLabel);
-
-        var optionsEntry = Entry.New();
-        optionsEntry.SetPlaceholderText("e.g. defaults,noatime,nofail");
-        optionsEntry.SetHexpand(true);
-        content.Append(optionsEntry);
-
-        var buttonBox = Box.New(Orientation.Horizontal, 8);
-        buttonBox.SetHalign(Align.End);
-        buttonBox.SetMarginTop(8);
-
-        var cancelButton = Button.NewWithLabel("Cancel");
-        cancelButton.OnClicked += (_, _) => DismissMountOverlay();
-
-        var confirmButton = Button.NewWithLabel("Mount");
-        confirmButton.AddCssClass("suggested-action");
-        confirmButton.OnClicked += (_, _) =>
+        _ = Task.Run(async () =>
         {
-            var mountPoint = mountEntry.GetText();
-            var description = descEntry.GetText();
-            var options = optionsEntry.GetText();
+            var createResult =
+                await _privOpService.CreateMountUnitFileAsync(result.Description, model.Uuid, result.MountPoint, model.FsType,
+                    result.Options);
+            Console.WriteLine(createResult.Success
+                ? $"Mount unit created: {createResult.Output}"
+                : $"Failed to create mount unit: {createResult.Error}");
 
-
-            _ = Task.Run(async () =>
+            if (createResult.Success)
             {
-                var result =
-                    await _privOpService.CreateMountUnitFileAsync(description, model.Uuid, mountPoint, model.FsType,
-                        options);
-                Console.WriteLine(result.Success
-                    ? $"Mount unit created: {result.Output}"
-                    : $"Failed to create mount unit: {result.Error}");
+                var unitName = result.MountPoint.Trim('/').Replace('/', '-') + ".mount";
+                await _privOpService.MountDrives(unitName);
 
-                if (result.Success)
+                GLib.Functions.IdleAdd(0, () =>
                 {
-                    var unitName = mountPoint.Trim('/').Replace('/', '-') + ".mount";
-                    await _privOpService.MountDrives(unitName);
-                }
-            });
-
-            DismissMountOverlay();
-        };
-
-        buttonBox.Append(cancelButton);
-        buttonBox.Append(confirmButton);
-        content.Append(buttonBox);
-
-        card.SetChild(content);
-        backdrop.Append(card);
-
-        _overlayWidget = backdrop;
-        _mainOverlay.AddOverlay(backdrop);
-    }
-
-    private void DismissMountOverlay()
-    {
-        if (_overlayWidget == null) return;
-        _mainOverlay.RemoveOverlay(_overlayWidget);
-        _overlayWidget = null;
+                    _ = LoadFStabDataAsync();
+                    return false;
+                });
+            }
+        });
     }
 
     private void OnCredentialRequested(object? sender, CredentialRequestEventArgs e)
@@ -229,20 +136,6 @@ public class MainWindow
         });
     }
 
-    private static void AddOverlayField(Box box, string fieldName, string value)
-    {
-        var hbox = Box.New(Orientation.Horizontal, 6);
-        var nameLabel = Label.New(fieldName + ":");
-        nameLabel.AddCssClass("dim-label");
-        nameLabel.SetXalign(0);
-        nameLabel.SetSizeRequest(60, -1);
-        var valueLabel = Label.New(value);
-        valueLabel.SetXalign(0);
-        valueLabel.SetSelectable(true);
-        hbox.Append(nameLabel);
-        hbox.Append(valueLabel);
-        box.Append(hbox);
-    }
 
     private async Task LoadFStabDataAsync()
     {

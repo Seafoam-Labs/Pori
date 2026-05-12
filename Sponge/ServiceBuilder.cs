@@ -15,7 +15,6 @@ public static class ServiceBuilder
         collection.AddTransient<IPrivOpService, PrivOpService>();
         collection.AddSingleton<ICredentialManager, CredentialManager>();
         collection.AddTransient<PasswordDialog>();
-        collection.AddTransient<NtfsWarning>();
         return collection.BuildServiceProvider();
     }
 }

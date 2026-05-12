@@ -2,9 +2,9 @@ using Gtk;
 
 namespace Sponge.Windows.Dialog;
 
-public class NtfsWarning
+public static class NtfsWarning
 {
-    public Task<bool> ShowNtfsWarningAsync(Overlay parentOverlay)
+    public static Task<bool> ShowNtfsWarningAsync(Overlay parentOverlay)
     {
         var tcs = new TaskCompletionSource<bool>();
 

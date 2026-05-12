@@ -2,7 +2,7 @@
 <interface>
     <requires lib="gtk" version="4.0"/>
     <object class="GtkApplicationWindow" id="MainWindow">
-        <property name="default-height">600</property>
+        <property name="default-height">800</property>
         <property name="default-width">900</property>
         <property name="title">Sponge</property>
         <child>
