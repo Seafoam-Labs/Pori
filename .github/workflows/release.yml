@@ -29,24 +29,24 @@ jobs:
 
       - name: Build and Publish (AOT)
         run: |
-          dotnet publish Sponge/Sponge.csproj -c Release -r linux-x64 -o out --nologo
+          dotnet publish Pori/Pori.csproj -c Release -r linux-x64 -o out --nologo
 
       - name: Prepare Artifacts
         run: |
           mkdir artifacts
-          cp out/sponge artifacts/sponge
+          cp out/pori artifacts/pori
           cp LICENSE artifacts/ || true
 
       - name: Create Tarball
         run: |
-          tar -czvf sponge-linux-x64.tar.gz -C artifacts .
+          tar -czvf pori-linux-x64.tar.gz -C artifacts .
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            sponge-linux-x64.tar.gz
+            pori-linux-x64.tar.gz
           generate_release_notes: true
           draft: false
           prerelease: false
