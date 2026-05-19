@@ -36,6 +36,8 @@ public class MainWindow
         _mainOverlay = (Overlay)mainBuilder.GetObject("MainOverlay")!;
         _diskFlowBox = (FlowBox)mainBuilder.GetObject("DiskFlowBox")!;
         _mountButton = (Button)mainBuilder.GetObject("MountButton")!;
+        
+        _window.SetIconName("pori");
 
         var refreshButton = (Button)mainBuilder.GetObject("RefreshButton")!;
         refreshButton.OnClicked += (_, _) => _ = LoadFStabDataAsync();

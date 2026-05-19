@@ -33,6 +33,9 @@ package() {
   # Install pori binary
   install -Dm755 out/pori "$pkgdir/usr/bin/pori"
 
+  # Install icon
+  install -Dm644 Pori/Assets/Pori.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/pori.png"
+
   # Install desktop entry
   cat <<'EOF' | install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/com.pori.app.desktop"
 [Desktop Entry]
