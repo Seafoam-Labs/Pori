@@ -16,13 +16,13 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <Version>0.0.1</Version>
+        <Version>0.0.2</Version>
         <AssemblyName>pori</AssemblyName>
-        <AssemblyVersion>0.0.1</AssemblyVersion>
+        <AssemblyVersion>0.0.2</AssemblyVersion>
         <AssemblyTitle>Pori</AssemblyTitle>
         <Description>Pori</Description>
         <Company>Seafoam Labs</Company>
-        <Product>Shelly CLI by Seafoam Labs</Product>
+        <Product>Pori by Seafoam Labs</Product>
         <Copyright>2026 Seafoam Labs</Copyright>
     </PropertyGroup>
     <ItemGroup>
