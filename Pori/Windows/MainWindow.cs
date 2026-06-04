@@ -17,6 +17,7 @@ public class MainWindow
     private readonly IFStabParser _fStabParser;
     private readonly ICredentialManager _credentialManager;
     private readonly PasswordDialog _passwordDialog;
+    private FStabModel? _selectedModel;
 
     public List<FStabModel> FStabModels { get; private set; } = [];
 
@@ -37,6 +38,10 @@ public class MainWindow
         _diskFlowBox = (FlowBox)mainBuilder.GetObject("DiskFlowBox")!;
         _mountButton = (Button)mainBuilder.GetObject("MountButton")!;
         
+        var versionLabel = (Label)mainBuilder.GetObject("VersionLabel")!;
+        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.1";
+        versionLabel.SetText($"v{version}");
+        
         _window.SetIconName("pori");
 
         var refreshButton = (Button)mainBuilder.GetObject("RefreshButton")!;
@@ -44,9 +49,21 @@ public class MainWindow
 
         _diskFlowBox.OnSelectedChildrenChanged += (_, _) =>
         {
-            var hasSelection = false;
-            _diskFlowBox.SelectedForeach((_, _) => hasSelection = true);
-            _mountButton.SetSensitive(hasSelection);
+            _selectedModel = null;
+            _diskFlowBox.SelectedForeach((_, child) =>
+            {
+                var index = child.GetIndex();
+                var selectableModels = FStabModels.Where(m =>
+                    !string.IsNullOrWhiteSpace(m.FsType) &&
+                    !string.IsNullOrWhiteSpace(m.Uuid) &&
+                    !m.MountPoints.Equals("[SWAP]", StringComparison.OrdinalIgnoreCase)).ToList();
+
+                if (index >= 0 && index < selectableModels.Count)
+                {
+                    _selectedModel = selectableModels[index];
+                }
+            });
+            _mountButton.SetSensitive(_selectedModel != null && string.IsNullOrWhiteSpace(_selectedModel.MountPoints));
         };
 
         _mountButton.OnClicked += OnMountClicked;
@@ -65,29 +82,16 @@ public class MainWindow
 
     private void OnMountClicked(Button sender, EventArgs args)
     {
-        FlowBoxChild? selectedChild = null;
-        _diskFlowBox.SelectedForeach((_, child) => selectedChild ??= child);
-        if (selectedChild == null)
+        if (_selectedModel == null)
             return;
 
-        var index = selectedChild.GetIndex();
-        var selectableModels = FStabModels.Where(m =>
-            !string.IsNullOrWhiteSpace(m.FsType) &&
-            !string.IsNullOrWhiteSpace(m.Uuid) &&
-            !m.MountPoints.Equals("[SWAP]", StringComparison.OrdinalIgnoreCase) &&
-            string.IsNullOrWhiteSpace(m.MountPoints)).ToList();
-
-        if (index >= 0 && index < selectableModels.Count)
+        if (_selectedModel.FsType.Equals("ntfs", StringComparison.OrdinalIgnoreCase))
         {
-            var model = selectableModels[index];
-            if (model.FsType.Equals("ntfs", StringComparison.OrdinalIgnoreCase))
-            {
-                _ = ShowNtfsWarningThenMount(model);
-            }
-            else
-            {
-                _ = ShowMountDialog(model);
-            }
+            _ = ShowNtfsWarningThenMount(_selectedModel);
+        }
+        else
+        {
+            _ = ShowMountDialog(_selectedModel);
         }
     }
 

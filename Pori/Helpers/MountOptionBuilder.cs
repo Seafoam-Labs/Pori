@@ -18,7 +18,8 @@ public static class MountOptionBuilder
             new MountOption("noacl", "Reduces metadata overhead by disabling extended permissions"),
             new MountOption("ssd_spread", "Optimizes allocation for low-end SSDs"),
             new MountOption("nosuid", "Security"),
-            new MountOption("nodev", "Security")
+            new MountOption("nodev", "Security"),
+            new MountOption("x-gvfs-show", "Shows the mount in the file manager and sidebar")
         ],
         ["ext4"] =
         [
@@ -27,14 +28,16 @@ public static class MountOptionBuilder
             new MountOption("errors=remount-ro", "Remounts the filesystem as read-only in case of errors"),
             new MountOption("discard", "Frees unused blocks on SSDs for better write performance"),
             new MountOption("nosuid", "Security"),
-            new MountOption("nodev", "Security")
+            new MountOption("nodev", "Security"),
+            new MountOption("x-gvfs-show", "Shows the mount in the file manager and sidebar")
         ],
         ["exfat"] =
         [
             new MountOption("defaults", "Use default mount options"),
             new MountOption("uid=$UID", "Mount with your user permissions"),
             new MountOption("gid=$GID", "Mount with your user group permissions"),
-            new MountOption("sync", "Forces all write operations to be flushed immediately")
+            new MountOption("sync", "Forces all write operations to be flushed immediately"),
+            new MountOption("x-gvfs-show", "Shows the mount in the file manager and sidebar")
         ],
         ["udf"] =
         [
@@ -44,7 +47,8 @@ public static class MountOptionBuilder
             new MountOption("gid=$GID", "Mount with your user group permissions"),
             new MountOption("noatime", "Improves performance and reduces writes to the drive"),
             new MountOption("nosuid", "Security"),
-            new MountOption("nodev", "Security")
+            new MountOption("nodev", "Security"),
+            new MountOption("x-gvfs-show", "Shows the mount in the file manager and sidebar")
         ],
         ["ntfs"] =
         [
@@ -54,11 +58,13 @@ public static class MountOptionBuilder
             new MountOption("gid=$GID", "Mount with your user group permissions"),
             new MountOption("nosuid", "Prevents execution of set-user/group-ID programs (security)"),
             new MountOption("nodev", "Prevents interpretation of block/character devices (security)"),
-            new MountOption("umask=022", "Sets standard file/directory permissions (rw-r--r-- / rwxr-xr-x)")
+            new MountOption("umask=022", "Sets standard file/directory permissions (rw-r--r-- / rwxr-xr-x)"),
+            new MountOption("x-gvfs-show", "Shows the mount in the file manager and sidebar")
         ],
         ["zfs"] =
         [
             new MountOption("defaults", "Use default mount options"),
+            new MountOption("x-gvfs-show", "Shows the mount in the file manager and sidebar")
         ]
     };
 
