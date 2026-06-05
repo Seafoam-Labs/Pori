@@ -1,13 +1,13 @@
 # Maintainer: Zoey Bauer <zoey.erin.bauer@gmail.com>
 # Maintainer: Caroline Snyder <hirpeng@gmail.com>
 pkgname=pori
-pkgver=0.0.1
-pkgrel=1
+pkgver=0.0.2
+pkgrel=2
 pkgdesc="Pori: Systemd Mount Manager"
 arch=('x86_64')
 url="https://github.com/Seafoam-Labs/Pori"
 license=('GPL-3.0-only')
-provides=('Pori')
+provides=('pori')
 depends=(
     'gtk4'
     'glib2'
