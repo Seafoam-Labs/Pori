@@ -1,8 +1,8 @@
 # Maintainer: Zoey Bauer <zoey.erin.bauer@gmail.com>
 # Maintainer: Caroline Snyder <hirpeng@gmail.com>
 pkgname=pori
-pkgver=0.0.2
-pkgrel=2
+pkgver=0.0.3
+pkgrel=1
 pkgdesc="Pori: Systemd Mount Manager"
 arch=('x86_64')
 url="https://github.com/Seafoam-Labs/Pori"
@@ -13,6 +13,7 @@ depends=(
     'glib2'
     'hicolor-icon-theme'
     'glibc'
+    'sudo'
 )
 makedepends=('dotnet-sdk-10.0' 'clang')
 
