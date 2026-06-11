@@ -192,8 +192,8 @@ public class CredentialManager : ICredentialManager
         using var process = new System.Diagnostics.Process();
         process.StartInfo = new System.Diagnostics.ProcessStartInfo
         {
-            FileName = "su",
-            Arguments = $"-c true {username}",
+            FileName = "sudo",
+            Arguments = "-S -p \"\" true",
             UseShellExecute = false,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
@@ -204,8 +204,7 @@ public class CredentialManager : ICredentialManager
         try
         {
             process.Start();
-
-            // Pipe the password to su
+            
             await process.StandardInput.WriteLineAsync(password);
             await process.StandardInput.FlushAsync();
             process.StandardInput.Close();
@@ -214,13 +213,13 @@ public class CredentialManager : ICredentialManager
 
             if (process.ExitCode == 0)
             {
-                Console.WriteLine("Credentials verified successfully via su.");
+                Console.WriteLine("Credentials verified successfully via sudo.");
                 MarkAsValidated();
                 return true;
             }
             else
             {
-                Console.Error.WriteLine("Authentication failed via su. Clearing credentials.");
+                Console.Error.WriteLine("Authentication failed via sudo. Clearing credentials.");
                 MarkAsInvalid();
                 return false;
             }

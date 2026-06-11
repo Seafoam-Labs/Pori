@@ -10,6 +10,10 @@ public class UnPrivOpService : IUnPrivOpService
         return await ExecuteUnprivilegedCommandAsync("lsblk", "-f");
     }
     
+    public async Task<OperationResult> EscapeMountAsync(string mountPoint )
+    {
+        return await ExecuteUnprivilegedCommandAsync("systemd-escape", "-p", "--suffix=mount", mountPoint);
+    }
    
     
     private async Task<OperationResult> ExecuteUnprivilegedCommandAsync(string command,

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Pori.Services;
 
-public class PrivOpService(ICredentialManager credentialManager) : IPrivOpService
+public class PrivOpService(ICredentialManager credentialManager, IUnPrivOpService unPrivOpService) : IPrivOpService
 {
     public async Task<bool> MountDrives(string unitName)
     {
@@ -12,33 +12,55 @@ public class PrivOpService(ICredentialManager credentialManager) : IPrivOpServic
 
         return result.Success && result2.Success;
     }
-    
-    public async Task<OperationResult> CreateMountUnitFileAsync(string description, string uuid, string mountPoint, string fsType, string options)
+
+    public async Task<OperationResult> CreateMountUnitFileAsync(string description, string uuid, string mountPoint,
+        string fsType, string options)
     {
         var unitName = mountPoint.Trim('/').Replace('/', '-') + ".mount";
         var unitFilePath = $"/etc/systemd/system/{unitName}";
 
-        var unitContent = "[Unit]\n"
-            + $"Description={description}\n"
-            + "\n"
-            + "[Mount]\n"
-            + $"What=/dev/disk/by-uuid/{uuid}\n"
-            + $"Where={mountPoint}\n"
-            + $"Type={fsType}\n"
-            + $"Options={options}\n"
-            + "\n"
-            + "[Install]\n"
-            + "WantedBy=multi-user.target\n";
+        var mountPointEscaped = await unPrivOpService.EscapeMountAsync(mountPoint);
+        if (!mountPointEscaped.Success)
+            return new OperationResult
+            {
+                Error = "failed to escape mount",
+                ExitCode = 1,
+                Success = false
+            };
 
-        return await ExecutePrivilegedCommandAsync("tee", unitContent, unitFilePath);
+
+        var unitContent = "[Unit]\n"
+                          + $"Description={description}\n"
+                          + "\n"
+                          + "[Mount]\n"
+                          + $"What=/dev/disk/by-uuid/{uuid}\n"
+                          + $"Where={mountPointEscaped.Output}\n"
+                          + $"Type={fsType}\n"
+                          + $"Options={options}\n"
+                          + "\n"
+                          + "[Install]\n"
+                          + "WantedBy=multi-user.target\n";
+
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(tempFile, unitContent);
+            return await ExecutePrivilegedCommandAsync("cp", [tempFile, unitFilePath]);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+                File.Delete(tempFile);
+        }
     }
-    
+
     private async Task<OperationResult> ExecutePrivilegedCommandAsync(string command, string[] args)
     {
         return await ExecutePrivilegedCommandAsync(command, inputData: null, args: args);
     }
 
-    private async Task<OperationResult> ExecutePrivilegedCommandAsync(string command, string? inputData, params string[] args)
+    private async Task<OperationResult> ExecutePrivilegedCommandAsync(string command, string? inputData,
+        params string[] args)
     {
         // Request credentials if not already available
         var hasCredentials = await credentialManager.RequestCredentialsAsync(command);
@@ -75,7 +97,7 @@ public class PrivOpService(ICredentialManager credentialManager) : IPrivOpServic
             StartInfo = new ProcessStartInfo
             {
                 FileName = "sudo",
-                Arguments = isPasswordless ? fullCommand : $"-S {fullCommand}",
+                Arguments = isPasswordless ? fullCommand : $"-S -p \"\" {fullCommand}",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -214,6 +236,4 @@ public class PrivOpService(ICredentialManager credentialManager) : IPrivOpServic
             };
         }
     }
-
-   
 }
