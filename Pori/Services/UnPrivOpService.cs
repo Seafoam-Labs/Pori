@@ -14,6 +14,11 @@ public class UnPrivOpService : IUnPrivOpService
     {
         return await ExecuteUnprivilegedCommandAsync("systemd-escape", "-p", "--suffix=mount", mountPoint);
     }
+    
+    public async Task<OperationResult> GetMountUnitInfoAsync(string unitName)
+    {
+        return await ExecuteUnprivilegedCommandAsync("systemctl", "status", unitName);
+    }
    
     
     private async Task<OperationResult> ExecuteUnprivilegedCommandAsync(string command,

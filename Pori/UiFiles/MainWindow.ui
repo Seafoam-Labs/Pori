@@ -80,7 +80,7 @@
                                     <object class="GtkStackPage">
                                         <property name="name">settings_page</property>
                                         <property name="child">
-                                            <object class="GtkBox" id="SettingsPageBox">
+                                            <object class="GtkBox" id="EditMountPageBox">
                                                 <property name="orientation">vertical</property>
                                             </object>
                                         </property>
@@ -90,7 +90,7 @@
                                     <object class="GtkStackPage">
                                         <property name="name">about_page</property>
                                         <property name="child">
-                                            <object class="GtkBox" id="AboutPageBox">
+                                            <object class="GtkBox" id="UnMountPageBox">
                                                 <property name="orientation">vertical</property>
                                             </object>
                                         </property>

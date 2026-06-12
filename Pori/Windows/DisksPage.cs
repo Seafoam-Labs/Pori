@@ -63,6 +63,8 @@ public class DisksPage : IPoriWindow
         _ = LoadFStabDataAsync();
     }
 
+    public void Refresh() => _ = LoadFStabDataAsync();
+
     public Box GetContent() => _content;
 
     public void SetOverlay(Overlay overlay) => _mainOverlay = overlay;

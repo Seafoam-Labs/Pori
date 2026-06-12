@@ -4,6 +4,7 @@ public interface IPrivOpService
 {
     Task<bool> MountDrives(string unitName);
     Task<OperationResult> CreateMountUnitFileAsync(string description, string uuid, string mountPoint, string fsType, string options);
+    Task<OperationResult> DeleteMountUnitAsync(string mountUnitName);
 }
 
 public class OperationResult

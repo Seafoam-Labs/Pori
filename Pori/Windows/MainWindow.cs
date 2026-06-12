@@ -1,4 +1,5 @@
 using Gtk;
+using Microsoft.Extensions.DependencyInjection;
 using Pori.Helpers;
 using Pori.Models;
 using Pori.Services;
@@ -27,12 +28,26 @@ public class MainWindow
         var navSettings = (ToggleButton)mainBuilder.GetObject("NavSettingsButton")!;
         var navAbout = (ToggleButton)mainBuilder.GetObject("NavAboutButton")!;
 
+        var disksBox = (Box)mainBuilder.GetObject("DisksPageBox")!;
+        var disksPage = serviceProvider.GetRequiredService<DisksPage>();
+        disksPage.SetOverlay(_mainOverlay);
+        disksBox.Append(disksPage.CreateWindow());
+
+        var editMountBox = (Box)mainBuilder.GetObject("EditMountPageBox")!;
+        var editMountPage = serviceProvider.GetRequiredService<EditMount>();
+        editMountBox.Append(editMountPage.CreateWindow());
+
+        var unmountBox = (Box)mainBuilder.GetObject("UnMountPageBox")!;
+        var unmountPage = serviceProvider.GetRequiredService<Unmount>();
+        unmountBox.Append(unmountPage.CreateWindow());
+
         navDisks.OnToggled += (s, _) =>
         {
             if (!s.Active) return;
             stack.VisibleChildName = "disks_page";
             navSettings.Active = false;
             navAbout.Active = false;
+            disksPage.Refresh();
         };
 
         navSettings.OnToggled += (s, _) =>
@@ -41,6 +56,7 @@ public class MainWindow
             stack.VisibleChildName = "settings_page";
             navDisks.Active = false;
             navAbout.Active = false;
+            editMountPage.Refresh();
         };
 
         navAbout.OnToggled += (s, _) =>
@@ -49,22 +65,8 @@ public class MainWindow
             stack.VisibleChildName = "about_page";
             navDisks.Active = false;
             navSettings.Active = false;
+            unmountPage.Refresh();
         };
-
-        var disksBox = (Box)mainBuilder.GetObject("DisksPageBox")!;
-        var disksPage = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<DisksPage>(serviceProvider);
-        disksPage.SetOverlay(_mainOverlay);
-        disksBox.Append(disksPage.GetContent());
-
-        var settingsBox = (Box)mainBuilder.GetObject("SettingsPageBox")!;
-        var settingsBuilder = Builder.NewFromString(ResourceHelper.LoadUiFile("UiFiles/EditMount.ui"), -1);
-        var settingsContent = (Box)settingsBuilder.GetObject("SettingsBox")!;
-        settingsBox.Append(settingsContent);
-
-        var aboutBox = (Box)mainBuilder.GetObject("AboutPageBox")!;
-        var aboutBuilder = Builder.NewFromString(ResourceHelper.LoadUiFile("UiFiles/Unmount.ui"), -1);
-        var aboutContent = (Box)aboutBuilder.GetObject("AboutBox")!;
-        aboutBox.Append(aboutContent);
         
         var versionLabel = (Label)mainBuilder.GetObject("VersionLabel")!;
         var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.1";

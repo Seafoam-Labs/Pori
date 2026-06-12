@@ -54,6 +54,21 @@ public class PrivOpService(ICredentialManager credentialManager, IUnPrivOpServic
         }
     }
 
+    public async Task<OperationResult> DeleteMountUnitAsync(string mountUnitName)
+    {
+        var unitFilePath = $"/etc/systemd/system/{mountUnitName}";
+
+        var deleteResult = await ExecutePrivilegedCommandAsync("rm", [unitFilePath]);
+        if (!deleteResult.Success)
+            return deleteResult;
+
+        var unmountResult = await ExecutePrivilegedCommandAsync("systemctl", ["stop", mountUnitName]);
+        if (!unmountResult.Success)
+            return unmountResult;
+
+        return await ExecutePrivilegedCommandAsync("systemctl", ["daemon-reload"]);
+    }
+
     private async Task<OperationResult> ExecutePrivilegedCommandAsync(string command, string[] args)
     {
         return await ExecutePrivilegedCommandAsync(command, inputData: null, args: args);

@@ -14,6 +14,7 @@ public static class ServiceBuilder
         collection.AddTransient<EditMount>();
         collection.AddTransient<Unmount>();
         collection.AddTransient<IFStabParser, FStabParser>();
+        collection.AddTransient<IMountFileParser, MountFileParser>();
         collection.AddTransient<IUnPrivOpService, UnPrivOpService>();
         collection.AddTransient<IPrivOpService, PrivOpService>();
         collection.AddSingleton<ICredentialManager, CredentialManager>();
