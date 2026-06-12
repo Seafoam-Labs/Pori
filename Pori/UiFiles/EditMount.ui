@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <requires lib="gtk" version="4.0"/>
+    <object class="GtkBox" id="SettingsBox">
+        <property name="orientation">vertical</property>
+        <property name="valign">center</property>
+        <property name="halign">center</property>
+        <property name="spacing">10</property>
+        <child>
+            <object class="GtkLabel">
+                <property name="label">Settings</property>
+                <attributes>
+                    <attribute name="weight" value="bold"/>
+                    <attribute name="scale" value="2.0"/>
+                </attributes>
+            </object>
+        </child>
+        <child>
+            <object class="GtkLabel">
+                <property name="label">Settings page content goes here.</property>
+            </object>
+        </child>
+    </object>
+</interface>

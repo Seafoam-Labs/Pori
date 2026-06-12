@@ -10,6 +10,9 @@ public static class ServiceBuilder
     public static ServiceProvider CreateDependencyInjection(ServiceCollection collection)
     {
         collection.AddTransient<MainWindow>();
+        collection.AddTransient<DisksPage>();
+        collection.AddTransient<EditMount>();
+        collection.AddTransient<Unmount>();
         collection.AddTransient<IFStabParser, FStabParser>();
         collection.AddTransient<IUnPrivOpService, UnPrivOpService>();
         collection.AddTransient<IPrivOpService, PrivOpService>();

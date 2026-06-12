@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <requires lib="gtk" version="4.0"/>
+    <object class="GtkBox" id="DisksBox">
+        <property name="orientation">vertical</property>
+        <child>
+            <object class="GtkBox">
+                <property name="orientation">horizontal</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">10</property>
+                <property name="margin-top">6</property>
+                <property name="margin-bottom">6</property>
+                <property name="spacing">6</property>
+                <child>
+                    <object class="GtkLabel">
+                        <property name="label">Disk Information</property>
+                        <property name="hexpand">true</property>
+                        <property name="xalign">0</property>
+                        <attributes>
+                            <attribute name="weight" value="bold"/>
+                        </attributes>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkButton" id="MountButton">
+                        <property name="label">Mount Disk</property>
+                        <property name="tooltip-text">Mount selected disk</property>
+                        <property name="sensitive">false</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkButton" id="RefreshButton">
+                        <property name="icon-name">view-refresh-symbolic</property>
+                        <property name="tooltip-text">Refresh</property>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="GtkScrolledWindow">
+                <property name="hexpand">true</property>
+                <property name="vexpand">true</property>
+                <property name="hscrollbar-policy">automatic</property>
+                <property name="vscrollbar-policy">automatic</property>
+                <property name="child">
+                    <object class="GtkFlowBox" id="DiskFlowBox">
+                        <property name="selection-mode">single</property>
+                        <property name="homogeneous">true</property>
+                        <property name="max-children-per-line">4</property>
+                        <property name="min-children-per-line">1</property>
+                        <property name="margin-start">10</property>
+                        <property name="margin-end">10</property>
+                        <property name="margin-top">10</property>
+                        <property name="margin-bottom">10</property>
+                        <property name="row-spacing">8</property>
+                        <property name="column-spacing">8</property>
+                    </object>
+                </property>
+            </object>
+        </child>
+    </object>
+</interface>
