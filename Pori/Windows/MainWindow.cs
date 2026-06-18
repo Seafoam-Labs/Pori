@@ -12,11 +12,13 @@ public class MainWindow
     private readonly ApplicationWindow _window;
     private readonly Overlay _mainOverlay;
     private readonly PasswordDialog _passwordDialog;
+    private EditMount? _editMountPage;
+    private Unmount? _unmountPage;
 
     public MainWindow(ICredentialManager credentialManager, PasswordDialog passwordDialog, IServiceProvider serviceProvider)
     {
         _passwordDialog = passwordDialog;
-
+        
         credentialManager.CredentialRequested += OnCredentialRequested;
 
         var mainBuilder = Builder.NewFromString(ResourceHelper.LoadUiFile("UiFiles/MainWindow.ui"), -1);
@@ -34,12 +36,7 @@ public class MainWindow
         disksBox.Append(disksPage.CreateWindow());
 
         var editMountBox = (Box)mainBuilder.GetObject("EditMountPageBox")!;
-        var editMountPage = serviceProvider.GetRequiredService<EditMount>();
-        editMountBox.Append(editMountPage.CreateWindow());
-
         var unmountBox = (Box)mainBuilder.GetObject("UnMountPageBox")!;
-        var unmountPage = serviceProvider.GetRequiredService<Unmount>();
-        unmountBox.Append(unmountPage.CreateWindow());
 
         navDisks.OnToggled += (s, _) =>
         {
@@ -56,7 +53,15 @@ public class MainWindow
             stack.VisibleChildName = "settings_page";
             navDisks.Active = false;
             navAbout.Active = false;
-            editMountPage.Refresh();
+
+            if (_editMountPage == null)
+            {
+                _editMountPage = serviceProvider.GetRequiredService<EditMount>();
+                _editMountPage.SetOverlay(_mainOverlay);
+                editMountBox.Append(_editMountPage.CreateWindow());
+            }
+            
+            _editMountPage.Refresh();
         };
 
         navAbout.OnToggled += (s, _) =>
@@ -65,7 +70,14 @@ public class MainWindow
             stack.VisibleChildName = "about_page";
             navDisks.Active = false;
             navSettings.Active = false;
-            unmountPage.Refresh();
+
+            if (_unmountPage == null)
+            {
+                _unmountPage = serviceProvider.GetRequiredService<Unmount>();
+                unmountBox.Append(_unmountPage.CreateWindow());
+            }
+
+            _unmountPage.Refresh();
         };
         
         var versionLabel = (Label)mainBuilder.GetObject("VersionLabel")!;

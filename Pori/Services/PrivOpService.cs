@@ -54,6 +54,62 @@ public class PrivOpService(ICredentialManager credentialManager, IUnPrivOpServic
         }
     }
 
+    public async Task<OperationResult> EditMountUnitFileAsync(string oldUnitName, string description, string mountPoint, string fsType, string options)
+    {
+        var getFileResult = await ExecutePrivilegedCommandAsync("cat", [$"/etc/systemd/system/{oldUnitName}"]);
+        if (!getFileResult.Success)
+            return getFileResult;
+            
+        var lines = getFileResult.Output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var whatLine = lines.FirstOrDefault(l => l.StartsWith("What="));
+        if (whatLine == null)
+            return new OperationResult { Error = "Failed to find 'What' directive in unit file.", Success = false };
+
+        var newUnitName = mountPoint.Trim('/').Replace('/', '-') + ".mount";
+        var unitFilePath = $"/etc/systemd/system/{newUnitName}";
+
+        var mountPointEscaped = await unPrivOpService.EscapeMountAsync(mountPoint);
+        if (!mountPointEscaped.Success)
+            return new OperationResult
+            {
+                Error = "failed to escape mount",
+                ExitCode = 1,
+                Success = false
+            };
+
+        var unitContent = "[Unit]\n"
+                          + $"Description={description}\n"
+                          + "\n"
+                          + "[Mount]\n"
+                          + $"{whatLine}\n"
+                          + $"Where={mountPointEscaped.Output}\n"
+                          + $"Type={fsType}\n"
+                          + $"Options={options}\n"
+                          + "\n"
+                          + "[Install]\n"
+                          + "WantedBy=multi-user.target\n";
+
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(tempFile, unitContent);
+            
+            if (oldUnitName != newUnitName)
+            {
+                var deleteResult = await ExecutePrivilegedCommandAsync("rm", [$"/etc/systemd/system/{oldUnitName}"]);
+                if (!deleteResult.Success)
+                    return deleteResult;
+            }
+
+            return await ExecutePrivilegedCommandAsync("cp", [tempFile, unitFilePath]);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+                File.Delete(tempFile);
+        }
+    }
+
     public async Task<OperationResult> DeleteMountUnitAsync(string mountUnitName)
     {
         var unitFilePath = $"/etc/systemd/system/{mountUnitName}";
@@ -67,6 +123,11 @@ public class PrivOpService(ICredentialManager credentialManager, IUnPrivOpServic
             return unmountResult;
 
         return await ExecutePrivilegedCommandAsync("systemctl", ["daemon-reload"]);
+    }
+
+    public async Task<OperationResult> GetMountUnitCatAsync(string unitName)
+    {
+        return await ExecutePrivilegedCommandAsync("cat", [$"/etc/systemd/system/{unitName}"]);
     }
 
     private async Task<OperationResult> ExecutePrivilegedCommandAsync(string command, string[] args)

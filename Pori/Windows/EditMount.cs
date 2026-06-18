@@ -2,6 +2,7 @@ using Gtk;
 using Pori.Helpers;
 using Pori.Models;
 using Pori.Services;
+using Pori.Windows.Dialog;
 
 namespace Pori.Windows;
 
@@ -10,29 +11,55 @@ public class EditMount : IPoriWindow
     private readonly Box _root;
     private readonly FlowBox _diskFlowBox;
     private readonly IUnPrivOpService _unPrivOpService;
+    private readonly IPrivOpService _privOpService;
     private readonly IMountCatParser _mountCatParser;
 
-    public EditMount(IUnPrivOpService unPrivOpService, IMountCatParser mountCatParser)
+    private List<MountCatInfo> MountInfo { get; set; } = [];
+    private MountCatInfo? _selectedModel;
+    private Overlay? _mainOverlay;
+
+    public EditMount(IUnPrivOpService unPrivOpService, IPrivOpService privOpService, IMountCatParser mountCatParser)
     {
         _unPrivOpService = unPrivOpService;
         _mountCatParser = mountCatParser;
+        _privOpService = privOpService;
 
         var builder = Builder.NewFromString(ResourceHelper.LoadUiFile("UiFiles/EditMount.ui"), -1);
         _root = (Box)builder.GetObject("DisksBox")!;
         _diskFlowBox = (FlowBox)builder.GetObject("DiskFlowBox")!;
         var refreshButton = (Button)builder.GetObject("RefreshButton")!;
+        var editButton = (Button)builder.GetObject("EditButton")!;
 
         refreshButton.OnClicked += (_, _) => _ = LoadDataAsync();
+        editButton.OnClicked += (_, _) => _ = EditMountAsync();
 
         _diskFlowBox.SetOrientation(Orientation.Vertical);
+
+        _diskFlowBox.OnSelectedChildrenChanged += (_, _) =>
+        {
+            _selectedModel = null;
+            _diskFlowBox.SelectedForeach((_, child) =>
+            {
+                var index = child.GetIndex();
+                if (index >= 0 && index < MountInfo.Count)
+                {
+                    _selectedModel = MountInfo[index];
+                }
+            });
+            editButton.SetSensitive(_selectedModel != null);
+        };
 
         _ = LoadDataAsync();
     }
 
     public void Refresh() => _ = LoadDataAsync();
 
+    public void SetOverlay(Overlay overlay) => _mainOverlay = overlay;
+
     private async Task LoadDataAsync()
     {
+        MountInfo.Clear();
+
         var listResult = await _unPrivOpService.GetActiveMountUnitsAsync();
         if (!listResult.Success)
             return;
@@ -41,18 +68,54 @@ public class EditMount : IPoriWindow
             .Where(u => File.Exists(Path.Combine("/etc/systemd/system", u)))
             .ToList();
 
-        var mounts = new List<MountCatInfo>();
         foreach (var unitName in unitNames)
         {
-            var showResult = await _unPrivOpService.GetMountUnitShowAsync(unitName);
-            var showOutput = showResult.Success ? showResult.Output : string.Empty;
-            mounts.Add(_mountCatParser.ParseMountShow(unitName, showOutput));
+            var catResult = await _privOpService.GetMountUnitCatAsync(unitName);
+            var catOutput = catResult.Success ? catResult.Output : string.Empty;
+            MountInfo.Add(_mountCatParser.ParseMountCat(unitName, catOutput));
         }
 
         GLib.Functions.IdleAdd(0, () =>
         {
-            PopulateDiskList(mounts);
+            PopulateDiskList(MountInfo);
             return false;
+        });
+    }
+
+    private async Task EditMountAsync()
+    {
+        Console.WriteLine($"Edit Mount {_selectedModel?.Where}");
+        if (_selectedModel == null)
+            return;
+        
+        _ = ShowMountDialog(_selectedModel);
+    }
+
+    private async Task ShowMountDialog(MountCatInfo model)
+    {
+        var result = await MountOptionsDialog.EditMountOptionsAsync(_mainOverlay!, model);
+        if (result == null)
+            return;
+
+        _ = Task.Run(async () =>
+        {
+            var createResult =
+                await _privOpService.EditMountUnitFileAsync(_selectedModel.UnitName, result.Description, result.MountPoint, _selectedModel.Type, result.Options);
+            Console.WriteLine(createResult.Success
+                ? $"Mount edited: {createResult.Output}"
+                : $"Failed to edit mount unit: {createResult.Error}");
+
+            if (createResult.Success)
+            {
+                var unitName = result.MountPoint.Trim('/').Replace('/', '-') + ".mount";
+                await _privOpService.MountDrives(unitName);
+
+                GLib.Functions.IdleAdd(0, () =>
+                {
+                    _ = LoadDataAsync();
+                    return false;
+                });
+            }
         });
     }
 

@@ -20,10 +20,10 @@ public class DisksPage : IPoriWindow
 
     private List<FStabModel> FStabModels { get; set; } = [];
 
-    
+
     public Widget CreateWindow() => _content;
-    
-    public DisksPage(IUnPrivOpService unPrivOpService, IPrivOpService privOpService, IFStabParser fStabParser) 
+
+    public DisksPage(IUnPrivOpService unPrivOpService, IPrivOpService privOpService, IFStabParser fStabParser)
     {
         _unPrivOpService = unPrivOpService;
         _privOpService = privOpService;
@@ -38,7 +38,7 @@ public class DisksPage : IPoriWindow
         refreshButton.OnClicked += (_, _) => _ = LoadFStabDataAsync();
 
         _diskFlowBox.SetOrientation(Orientation.Vertical);
-        
+
         _diskFlowBox.OnSelectedChildrenChanged += (_, _) =>
         {
             _selectedModel = null;
@@ -86,7 +86,7 @@ public class DisksPage : IPoriWindow
 
     private async Task ShowNtfsWarningThenMount(FStabModel model)
     {
-        var proceed = await NtfsWarning.ShowNtfsWarningAsync(_mainOverlay);
+        var proceed = await NtfsWarning.ShowNtfsWarningAsync(_mainOverlay!);
         if (proceed)
         {
             await ShowMountDialog(model);
@@ -95,14 +95,15 @@ public class DisksPage : IPoriWindow
 
     private async Task ShowMountDialog(FStabModel model)
     {
-        var result = await MountOptionsDialog.ShowMountOptionsAsync(_mainOverlay, model);
+        var result = await MountOptionsDialog.ShowMountOptionsAsync(_mainOverlay!, model);
         if (result == null)
             return;
 
         _ = Task.Run(async () =>
         {
             var createResult =
-                await _privOpService.CreateMountUnitFileAsync(result.Description, model.Uuid, result.MountPoint, model.FsType,
+                await _privOpService.CreateMountUnitFileAsync(result.Description, model.Uuid, result.MountPoint,
+                    model.FsType,
                     result.Options);
             Console.WriteLine(createResult.Success
                 ? $"Mount unit created: {createResult.Output}"
@@ -147,10 +148,7 @@ public class DisksPage : IPoriWindow
             _diskFlowBox.Append(card);
         }
 
-        _diskFlowBox.SetFilterFunc(child =>
-        {
-            return true;
-        });
+        _diskFlowBox.SetFilterFunc(child => true);
     }
 
     private static Widget CreateDiskCard(FStabModel model, bool hasMountPoint)
@@ -181,11 +179,12 @@ public class DisksPage : IPoriWindow
             AddCardField(contentBox, "Use%", model.FSused, false);
             AddUsageBar(contentBox, model.FSused);
         }
+
         if (hasMountPoint)
             AddCardField(contentBox, "Mount", model.MountPoints, false);
 
         mainBox.Append(contentBox);
-        
+
         if (hasMountPoint)
         {
             frame.SetTooltipText("Already mounted at " + model.MountPoints);
@@ -235,5 +234,4 @@ public class DisksPage : IPoriWindow
     }
 
     public void Dispose() => _content.Dispose();
-
 }

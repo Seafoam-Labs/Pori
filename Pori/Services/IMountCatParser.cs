@@ -4,6 +4,6 @@ namespace Pori.Services;
 
 public interface IMountCatParser
 {
-    MountCatInfo ParseMountShow(string unitName, string showOutput);
+    MountCatInfo ParseMountCat(string unitName, string catOutput);
     List<string> ParseMountUnitNames(string listUnitsOutput);
 }

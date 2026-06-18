@@ -21,6 +21,13 @@
                        </attributes>
                    </object>
                </child>
+                <child>
+                   <object class="GtkButton" id="EditButton">
+                       <property name="label">Edit Disk</property>
+                       <property name="tooltip-text">Edit Disk Mount</property>
+                       <property name="sensitive">false</property>
+                   </object>
+               </child>
                <child>
                    <object class="GtkButton" id="RefreshButton">
                        <property name="icon-name">view-refresh-symbolic</property>

@@ -22,13 +22,16 @@ public class MountCatParser : IMountCatParser
         return units;
     }
 
-    public MountCatInfo ParseMountShow(string unitName, string showOutput)
+    public MountCatInfo ParseMountCat(string unitName, string catOutput)
     {
         string description = "", what = "", where = "", type = "", options = "";
 
-        foreach (var line in showOutput.Split('\n'))
+        foreach (var line in catOutput.Split('\n'))
         {
             var trimmed = line.Trim();
+            if ("#".StartsWith(trimmed) || "[".StartsWith(trimmed))
+                continue;
+
             if (trimmed.StartsWith("Description=", StringComparison.OrdinalIgnoreCase))
                 description = trimmed["Description=".Length..].Trim();
             else if (trimmed.StartsWith("What=", StringComparison.OrdinalIgnoreCase))
