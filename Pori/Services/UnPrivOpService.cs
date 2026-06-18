@@ -19,6 +19,21 @@ public class UnPrivOpService : IUnPrivOpService
     {
         return await ExecuteUnprivilegedCommandAsync("systemctl", "status", unitName);
     }
+
+    public async Task<OperationResult> GetActiveMountUnitsAsync()
+    {
+        return await ExecuteUnprivilegedCommandAsync("systemctl", "list-units", "--type=mount", "--state=active", "--no-legend", "--no-pager");
+    }
+
+    public async Task<OperationResult> GetMountUnitCatAsync(string unitName)
+    {
+        return await ExecuteUnprivilegedCommandAsync("systemctl", "cat", unitName);
+    }
+
+    public async Task<OperationResult> GetMountUnitShowAsync(string unitName)
+    {
+        return await ExecuteUnprivilegedCommandAsync("systemctl", "show", unitName, "--property=Description,What,Where,Type,Options");
+    }
    
     
     private async Task<OperationResult> ExecuteUnprivilegedCommandAsync(string command,

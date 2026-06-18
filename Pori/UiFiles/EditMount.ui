@@ -13,19 +13,12 @@
                <property name="spacing">6</property>
                <child>
                    <object class="GtkLabel">
-                       <property name="label">Disk Information</property>
+                       <property name="label">Active Mounts</property>
                        <property name="hexpand">true</property>
                        <property name="xalign">0</property>
                        <attributes>
                            <attribute name="weight" value="bold"/>
                        </attributes>
-                   </object>
-               </child>
-               <child>
-                   <object class="GtkButton" id="MountButton">
-                       <property name="label">Edit Disk</property>
-                       <property name="tooltip-text">Edit selected disk</property>
-                       <property name="sensitive">false</property>
                    </object>
                </child>
                <child>
