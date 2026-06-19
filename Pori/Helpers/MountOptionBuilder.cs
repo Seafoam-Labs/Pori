@@ -68,11 +68,19 @@ public static class MountOptionBuilder
         ]
     };
 
+    public static List<string> GetRecommendedOptions(string fsType)
+    {
+        return !FsOptions.TryGetValue(fsType, out var options)
+            ? []
+            : options.Select(o => ResolveOption(o.Option)).ToList();
+    }
+
     /// <summary>
     /// Builds a GTK Box containing checkboxes for the given filesystem type.
     /// All options are enabled by default. Returns null if no options exist for the filesystem.
     /// </summary>
-    public static Box? BuildOptionsBox(string fsType, out List<(CheckButton Check, string Option)> checkButtons)
+    public static Box? BuildOptionsBox(string fsType, out List<(CheckButton Check, string Option)> checkButtons,
+        string[]? currentOptions = null)
     {
         checkButtons = [];
 
@@ -86,7 +94,7 @@ public static class MountOptionBuilder
             var resolvedOption = ResolveOption(opt.Option);
 
             var checkBox = CheckButton.New();
-            checkBox.SetActive(opt.Selected);
+            checkBox.SetActive(currentOptions?.Contains(resolvedOption) ?? opt.Selected);
 
             var label = Label.New(null);
             label.SetMarkup($"<b>{opt.Option}</b> — {opt.Description}");
