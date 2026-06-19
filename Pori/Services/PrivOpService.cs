@@ -16,25 +16,19 @@ public class PrivOpService(ICredentialManager credentialManager, IUnPrivOpServic
     public async Task<OperationResult> CreateMountUnitFileAsync(string description, string uuid, string mountPoint,
         string fsType, string options)
     {
-        var unitName = mountPoint.Trim('/').Replace('/', '-') + ".mount";
+        var unitName = mountPoint.Trim('/').Replace('/', '-');
+        if (!unitName.EndsWith(".mount"))
+            unitName += ".mount";
         var unitFilePath = $"/etc/systemd/system/{unitName}";
 
-        var mountPointEscaped = await unPrivOpService.EscapeMountAsync(mountPoint);
-        if (!mountPointEscaped.Success)
-            return new OperationResult
-            {
-                Error = "failed to escape mount",
-                ExitCode = 1,
-                Success = false
-            };
-
+        var path = mountPoint.StartsWith("/") ? mountPoint : "/" + mountPoint;
 
         var unitContent = "[Unit]\n"
                           + $"Description={description}\n"
                           + "\n"
                           + "[Mount]\n"
                           + $"What=/dev/disk/by-uuid/{uuid}\n"
-                          + $"Where={mountPointEscaped.Output}\n"
+                          + $"Where={path}\n"
                           + $"Type={fsType}\n"
                           + $"Options={options}\n"
                           + "\n"
@@ -60,29 +54,22 @@ public class PrivOpService(ICredentialManager credentialManager, IUnPrivOpServic
         if (!getFileResult.Success)
             return getFileResult;
             
-        var lines = getFileResult.Output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var lines = getFileResult.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
         var whatLine = lines.FirstOrDefault(l => l.StartsWith("What="));
         if (whatLine == null)
             return new OperationResult { Error = "Failed to find 'What' directive in unit file.", Success = false };
 
-        var newUnitName = mountPoint.Trim('/').Replace('/', '-') + ".mount";
-        var unitFilePath = $"/etc/systemd/system/{newUnitName}";
+        var unitName = mountPoint.Trim('/').Replace('/', '-').Replace(".mount", "");
+        var unitFilePath = $"/etc/systemd/system/{unitName}.mount";
 
-        var mountPointEscaped = await unPrivOpService.EscapeMountAsync(mountPoint);
-        if (!mountPointEscaped.Success)
-            return new OperationResult
-            {
-                Error = "failed to escape mount",
-                ExitCode = 1,
-                Success = false
-            };
+        var path = "/".StartsWith(mountPoint) ? mountPoint : "/" + mountPoint;
 
         var unitContent = "[Unit]\n"
                           + $"Description={description}\n"
                           + "\n"
                           + "[Mount]\n"
                           + $"{whatLine}\n"
-                          + $"Where={mountPointEscaped.Output}\n"
+                          + $"Where={path}\n"
                           + $"Type={fsType}\n"
                           + $"Options={options}\n"
                           + "\n"
@@ -94,7 +81,7 @@ public class PrivOpService(ICredentialManager credentialManager, IUnPrivOpServic
         {
             await File.WriteAllTextAsync(tempFile, unitContent);
             
-            if (oldUnitName != newUnitName)
+            if (oldUnitName != mountPoint)
             {
                 var deleteResult = await ExecutePrivilegedCommandAsync("rm", [$"/etc/systemd/system/{oldUnitName}"]);
                 if (!deleteResult.Success)

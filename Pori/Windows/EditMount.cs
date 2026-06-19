@@ -48,8 +48,6 @@ public class EditMount : IPoriWindow
             });
             editButton.SetSensitive(_selectedModel != null);
         };
-
-        _ = LoadDataAsync();
     }
 
     public void Refresh() => _ = LoadDataAsync();

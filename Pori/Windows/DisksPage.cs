@@ -111,7 +111,9 @@ public class DisksPage : IPoriWindow
 
             if (createResult.Success)
             {
-                var unitName = result.MountPoint.Trim('/').Replace('/', '-') + ".mount";
+                var unitName = result.MountPoint.Trim('/').Replace('/', '-');
+                if (!unitName.EndsWith(".mount"))
+                    unitName += ".mount";
                 await _privOpService.MountDrives(unitName);
 
                 GLib.Functions.IdleAdd(0, () =>
