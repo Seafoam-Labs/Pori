@@ -1,7 +1,7 @@
 # Maintainer: Zoey Bauer <zoey.erin.bauer@gmail.com>
 # Maintainer: Caroline Snyder <hirpeng@gmail.com>
 pkgname=pori
-pkgver=0.0.3
+pkgver=0.0.5
 pkgrel=1
 pkgdesc="Pori: Systemd Mount Manager"
 arch=('x86_64')

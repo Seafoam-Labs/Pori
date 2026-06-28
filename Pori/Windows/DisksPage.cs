@@ -183,15 +183,20 @@ public class DisksPage : IPoriWindow
         }
 
         if (hasMountPoint)
+        {
             AddCardField(contentBox, "Mount", model.MountPoints, false);
+            if (model.MountPoints is not ("/home" or "/boot"))
+            {
+                AddCardField(contentBox, "Tip", "To Mount a mounted drive through pori it must be unmounted first", false);
+            }
+           
+        }
+      
 
+        
         mainBox.Append(contentBox);
 
-        if (hasMountPoint)
-        {
-            frame.SetTooltipText("Already mounted at " + model.MountPoints);
-            frame.SetSensitive(false);
-        }
+      
 
         frame.SetChild(mainBox);
         return frame;

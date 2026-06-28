@@ -16,9 +16,9 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <Version>0.0.3</Version>
+        <Version>0.0.5</Version>
         <AssemblyName>pori</AssemblyName>
-        <AssemblyVersion>0.0.3</AssemblyVersion>
+        <AssemblyVersion>0.0.5</AssemblyVersion>
         <AssemblyTitle>Pori</AssemblyTitle>
         <Description>Pori</Description>
         <Company>Seafoam Labs</Company>

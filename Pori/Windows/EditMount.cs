@@ -30,7 +30,7 @@ public class EditMount : IPoriWindow
         var refreshButton = (Button)builder.GetObject("RefreshButton")!;
         var editButton = (Button)builder.GetObject("EditButton")!;
 
-        refreshButton.OnClicked += (_, _) => _ = LoadDataAsync();
+        refreshButton.OnClicked += (_, _) => Refresh();
         editButton.OnClicked += (_, _) => _ = EditMountAsync();
 
         _diskFlowBox.SetOrientation(Orientation.Vertical);
@@ -110,7 +110,7 @@ public class EditMount : IPoriWindow
 
                 GLib.Functions.IdleAdd(0, () =>
                 {
-                    _ = LoadDataAsync();
+                    Refresh();
                     return false;
                 });
             }
