@@ -1,6 +1,6 @@
 # Pori
 <p align="center">
-  <img src="https://github.com/Seafoam-Labs/Pori/raw/master/Pori/Assets/Pori.png" alt="Pori Logo" width="128">
+  <img src="https://github.com/Seafoam-Labs/Pori/raw/master/Pori.Ui/assets/pori.png" alt="Pori Logo" width="128">
 </p>
 
 Pori (short for Porifera) is a modern Systemd Mount Manager designed to make mounting drives on Linux simple, reliable, and consistent with system standards.
@@ -9,14 +9,14 @@ Pori (short for Porifera) is a modern Systemd Mount Manager designed to make mou
 
 * **Systemd Integration**: Create and manage `.mount` units in `/etc/systemd/system/` instead of legacy `/etc/fstab`.
 * **Smart Defaults**: Automatically handles proper mount options for various file systems.
-* **Desktop Integration**: 
-  * Native GTK4 interface.
-* **Privileged Operations**: Securely handles root-level operations via `sudo`.
+* **Native GTK4 interface** written in Zig.
+* **D-Bus native**: drive info from UDisks2 and unit state from systemd1 — no CLI scraping.
+* **Privileged Operations**: authentication via polkit (`pkexec`) — no passwords in the app.
 
 ## Future Features
-* Editing mounts and mount options
-* Removing Mounts
-* Mounting Network devices
+* Wiping / formatting drives (UDisks2)
+* Mounting network devices
+* `.automount` (mount on first access) support
 
 ## Installation
 
@@ -33,17 +33,20 @@ makepkg -si
 ### Build from Source
 
 **Requirements:**
-* .NET 10.0 SDK
+* Zig 0.16+
 * GTK4 development libraries
-* clang (for AOT compilation)
 
 **Build:**
 
 ```bash
-dotnet publish Pori/Pori.csproj -c Release -r linux-x64 -o out
+cd Pori.Ui
+zig build -Doptimize=ReleaseSafe
 ```
 
-The binary will be available in the `out/` directory.
+The binary will be available at `Pori.Ui/zig-out/bin/pori` (run with `zig build run` during development).
+
+See [`Pori.Ui/PORTING.md`](Pori.Ui/PORTING.md) for architecture notes, the
+D-Bus migration details and the roadmap.
 
 ## License
 
