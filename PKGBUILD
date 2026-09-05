@@ -1,7 +1,7 @@
 # Maintainer: Zoey Bauer <zoey.erin.bauer@gmail.com>
 # Maintainer: Caroline Snyder <hirpeng@gmail.com>
 pkgname=pori
-pkgver=0.0.5
+pkgver=0.1.0
 pkgrel=1
 pkgdesc="Pori: Systemd Mount Manager"
 arch=('x86_64')
@@ -13,9 +13,10 @@ depends=(
     'glib2'
     'hicolor-icon-theme'
     'glibc'
-    'sudo'
+    'polkit'
+    'udisks2'
 )
-makedepends=('dotnet-sdk-10.0' 'clang')
+makedepends=('zig>=0.16')
 
 # Source tarball from GitHub release
 source=("${pkgname}-${pkgver}.tar.gz::https://github.com/Seafoam-Labs/Pori/archive/v${pkgver}.tar.gz")
@@ -23,19 +24,24 @@ source=("${pkgname}-${pkgver}.tar.gz::https://github.com/Seafoam-Labs/Pori/archi
 sha256sums=('SKIP')
 
 build() {
-  cd "$srcdir/Pori-${pkgver}"
+  cd "$srcdir/Pori-${pkgver}/Pori.Ui"
 
-  dotnet publish Pori/Pori.csproj -c Release -r linux-x64 -o out --nologo -p:InstructionSet=${INSTRUCTIONS:=x86-64}
+  zig build --verbose \
+    --prefix "$srcdir/Pori-${pkgver}/out" \
+    --cache-dir "$srcdir/zig-cache" \
+    --global-cache-dir "$srcdir/zig-global-cache" \
+    -Dcpu=baseline \
+    -Doptimize=ReleaseSafe
 }
 
 package() {
   cd "$srcdir/Pori-${pkgver}"
 
   # Install pori binary
-  install -Dm755 out/pori "$pkgdir/usr/bin/pori"
+  install -Dm755 out/bin/pori "$pkgdir/usr/bin/pori"
 
   # Install icon
-  install -Dm644 Pori/Assets/Pori.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/pori.png"
+  install -Dm644 Pori.Ui/assets/pori.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/pori.png"
 
   # Install desktop entry
   cat <<'EOF' | install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/com.pori.app.desktop"

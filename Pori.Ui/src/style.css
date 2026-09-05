@@ -1,0 +1,36 @@
+
+.lockout-overlay {
+    background-color: rgba(0, 0, 0, 0.45);
+}
+
+.dialog-overlay {
+    border-radius: 12px;
+    border: 1px solid alpha(currentColor, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    background-color: @window_bg_color;
+}
+
+.pori-card {
+    border-radius: 10px;
+}
+
+.pori-card:selected {
+    border-color: @accent_bg_color;
+}
+
+.error-label {
+    color: #e5534b;
+    font-weight: bold;
+}
+
+.success-label {
+    color: #57ab5a;
+    font-weight: bold;
+}
+
+.mount-badge {
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 0.85em;
+    background-color: alpha(@accent_bg_color, 0.25);
+}

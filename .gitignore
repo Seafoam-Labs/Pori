@@ -1,5 +1,18 @@
+# Zig build artifacts
+.zig-cache/
+zig-out/
+zig-pkg/
+
+# makepkg output
+pkg/
+*.pkg.tar.zst
+
+# .NET / IDE (legacy C# project)
 bin/
 obj/
-/packages/
+packages/
 riderModule.iml
 /_ReSharper.Caches/
+.idea/
+.vs/
+*.user

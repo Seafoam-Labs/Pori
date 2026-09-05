@@ -3,50 +3,62 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    container:
+      image: archlinux:latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-4-dev libglib2.0-dev libegl1-mesa-dev clang
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm zig base-devel gtk4 glibc git curl pkgconf
 
-      - name: Build and Publish (AOT)
-        run: |
-          dotnet publish Pori/Pori.csproj -c Release -r linux-x64 -o out --nologo
+      # Checkout only after git is installed in the container.
+      - uses: actions/checkout@v6
 
-      - name: Prepare Artifacts
+      - name: Build Pori.Ui
         run: |
-          mkdir artifacts
-          cp out/pori artifacts/pori
-          cp LICENSE artifacts/ || true
+          (cd Pori.Ui && zig build --verbose \
+            --prefix ../publish/build \
+            -Dcpu=baseline \
+            -Doptimize=ReleaseSafe)
 
-      - name: Create Tarball
+      - name: Run tests
+        run: cd Pori.Ui && zig build test
+
+      - name: Publish
         run: |
-          tar -czvf pori-linux-x64.tar.gz -C artifacts .
+          mkdir -p publish/pori
+          install -Dm755 publish/build/bin/pori publish/pori/pori
+          install -m644 Pori.Ui/assets/pori.png publish/pori/
+          install -m644 LICENSE publish/pori/
+
+      - name: Create tarball
+        run: tar -czf publish/Pori-linux-x64.tar.gz -C publish/pori .
+
+      - name: Generate SHA256 checksums
+        run: |
+          cd publish
+          VERSION=${GITHUB_REF#refs/tags/}
+          curl -sL "https://github.com/Seafoam-Labs/Pori/archive/${VERSION}.tar.gz" -o "source-${VERSION}.tar.gz"
+          sha256sum "source-${VERSION}.tar.gz" | sed "s/source-${VERSION}.tar.gz/${VERSION}.tar.gz/" > SHA256SUMS.txt
+          sha256sum Pori-linux-x64.tar.gz >> SHA256SUMS.txt
+          rm "source-${VERSION}.tar.gz"
+          cat SHA256SUMS.txt
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
         with:
           files: |
-            pori-linux-x64.tar.gz
-          generate_release_notes: true
+            publish/Pori-linux-x64.tar.gz
+            publish/SHA256SUMS.txt
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
