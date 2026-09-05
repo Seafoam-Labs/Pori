@@ -11,7 +11,6 @@ Pori (short for Porifera) is a modern Systemd Mount Manager designed to make mou
 * **Smart Defaults**: Automatically handles proper mount options for various file systems.
 * **Native GTK4 interface** written in Zig.
 * **D-Bus native**: drive info from UDisks2 and unit state from systemd1 — no CLI scraping.
-* **Privileged Operations**: authentication via polkit (`pkexec`) — no passwords in the app.
 
 ## Future Features
 * Wiping / formatting drives (UDisks2)
@@ -34,7 +33,7 @@ makepkg -si
 
 **Requirements:**
 * Zig 0.16+
-* GTK4 development libraries
+* GTK4
 
 **Build:**
 
@@ -44,9 +43,6 @@ zig build -Doptimize=ReleaseSafe
 ```
 
 The binary will be available at `Pori.Ui/zig-out/bin/pori` (run with `zig build run` during development).
-
-See [`Pori.Ui/PORTING.md`](Pori.Ui/PORTING.md) for architecture notes, the
-D-Bus migration details and the roadmap.
 
 ## License
 
