@@ -79,38 +79,21 @@ pub fn createMountUnit(arena: std.mem.Allocator, description: []const u8, uuid: 
     const script = try std.fmt.allocPrint(arena,
         \\set -e
         \\cp {s} '/etc/systemd/system/{s}'
+        \\chmod 644 '/etc/systemd/system/{s}'
         \\systemctl daemon-reload
         \\systemctl enable --now '{s}'
-    , .{ try shQuote(arena, tmp), unit, unit });
+    , .{ try shQuote(arena, tmp), unit, unit, unit });
 
     return runPrivileged(arena, &.{ "/usr/bin/sh", "-c", script });
 }
 
-fn readWhatLine(arena: std.mem.Allocator, unit: []const u8) !?[]const u8 {
-    const path = try std.fmt.allocPrint(arena, "/etc/systemd/system/{s}", .{unit});
-    const content = sysutil.readFileAlloc(arena, path) orelse return null;
-    var lines = std.mem.splitScalar(u8, content, '\n');
-    while (lines.next()) |line| {
-        const trimmed = std.mem.trim(u8, line, " \t\r");
-        if (std.mem.startsWith(u8, trimmed, "What=")) {
-            return trimmed;
-        }
-    }
-    return null;
-}
-
-pub fn editMountUnit(arena: std.mem.Allocator, old_unit: []const u8, description: []const u8, mount_point: []const u8, fs_type: []const u8, options: []const u8) !OpResult {
-    const new_unit = try unitname.fromMountPoint(arena, mount_point);
-    const what_line = (try readWhatLine(arena, old_unit)) orelse
-        return .{ .ok = false, .cancelled = false, .output = "", .err = "Failed to find 'What' directive in unit file.", .exit_code = -1 };
-
+fn buildEditContent(arena: std.mem.Allocator, description: []const u8, mount_point: []const u8, fs_type: []const u8, options: []const u8) ![]const u8 {
     const path = if (std.mem.startsWith(u8, mount_point, "/")) mount_point else try std.fmt.allocPrint(arena, "/{s}", .{mount_point});
-    const content = try std.fmt.allocPrint(arena,
+    return std.fmt.allocPrint(arena,
         \\[Unit]
         \\Description={s}
         \\
         \\[Mount]
-        \\{s}
         \\Where={s}
         \\Type={s}
         \\Options={s}
@@ -118,28 +101,48 @@ pub fn editMountUnit(arena: std.mem.Allocator, old_unit: []const u8, description
         \\[Install]
         \\WantedBy=multi-user.target
         \\
-    , .{ description, what_line, path, fs_type, options });
+    , .{ description, path, fs_type, options });
+}
+
+pub fn editMountUnit(arena: std.mem.Allocator, old_unit: []const u8, description: []const u8, mount_point: []const u8, fs_type: []const u8, options: []const u8) !OpResult {
+    const new_unit = try unitname.fromMountPoint(arena, mount_point);
+    const content = try buildEditContent(arena, description, mount_point, fs_type, options);
 
     const tmp = try writeTempFile(arena, content);
     defer sysutil.deleteFile(tmp);
+    const spliced = try std.fmt.allocPrint(arena, "{s}.new", .{tmp});
+    defer sysutil.deleteFile(spliced);
+
+    const old_path = try shQuote(arena, try std.fmt.allocPrint(arena, "/etc/systemd/system/{s}", .{old_unit}));
+
+    const splice = try std.fmt.allocPrint(arena,
+        \\if ! grep -q '^What=' {s}; then echo 'unit file has no What directive' >&2; exit 3; fi
+        \\sed -n '1,/^\[Mount\]$/p' {s} > {s}
+        \\sed -n '/^What=/p' {s} | head -n 1 >> {s}
+        \\sed -n '/^\[Mount\]$/,$p' {s} | tail -n +2 >> {s}
+    , .{ old_path, try shQuote(arena, tmp), try shQuote(arena, spliced), old_path, try shQuote(arena, spliced), try shQuote(arena, tmp), try shQuote(arena, spliced) });
 
     var script: []const u8 = undefined;
     if (std.mem.eql(u8, old_unit, new_unit)) {
         script = try std.fmt.allocPrint(arena,
             \\set -e
-            \\cp {s} '/etc/systemd/system/{s}'
+            \\{s}
+            \\cp {s} {s}
+            \\chmod 644 {s}
             \\systemctl daemon-reload
             \\if systemctl is-active --quiet '{s}'; then systemctl restart '{s}'; else systemctl enable --now '{s}'; fi
-        , .{ try shQuote(arena, tmp), new_unit, new_unit, new_unit, new_unit });
+        , .{ splice, try shQuote(arena, spliced), old_path, old_path, new_unit, new_unit, new_unit });
     } else {
         script = try std.fmt.allocPrint(arena,
             \\set -e
+            \\{s}
             \\systemctl disable --now '{s}' || true
-            \\rm -f '/etc/systemd/system/{s}'
+            \\rm -f {s}
             \\cp {s} '/etc/systemd/system/{s}'
+            \\chmod 644 '/etc/systemd/system/{s}'
             \\systemctl daemon-reload
             \\systemctl enable --now '{s}'
-        , .{ old_unit, old_unit, try shQuote(arena, tmp), new_unit, new_unit });
+        , .{ splice, old_unit, old_path, try shQuote(arena, spliced), new_unit, new_unit, new_unit });
     }
 
     return runPrivileged(arena, &.{ "/usr/bin/sh", "-c", script });
@@ -169,4 +172,13 @@ test "unit content layout matches systemd expectations" {
     try std.testing.expect(std.mem.indexOf(u8, content, "What=/dev/disk/by-uuid/abcd-1234") != null);
     try std.testing.expect(std.mem.indexOf(u8, content, "Where=/mnt/games") != null);
     try std.testing.expect(std.mem.indexOf(u8, content, "WantedBy=multi-user.target") != null);
+}
+
+test "edit content leaves What to the privileged splice" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const content = try buildEditContent(arena.allocator(), "Games", "mnt/games", "btrfs", "defaults,noatime");
+    try std.testing.expect(std.mem.indexOf(u8, content, "What=") == null);
+    try std.testing.expect(std.mem.indexOf(u8, content, "Where=/mnt/games") != null);
+    try std.testing.expect(std.mem.indexOf(u8, content, "[Mount]") != null);
 }

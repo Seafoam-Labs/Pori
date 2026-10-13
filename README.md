@@ -12,7 +12,6 @@ Pori (short for Porifera) is a Systemd Mount Manager designed to make mounting d
 * **Native GTK4 interface** written in Zig.
 
 ## Future Features
-* Wiping / formatting drives (UDisks2)
 * Mounting network devices
 * `.automount` (mount on first access) support
 

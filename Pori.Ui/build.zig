@@ -43,7 +43,16 @@ pub fn build(b: *std.Build) void {
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| run_cmd.addArgs(args);
 
-    const mod_tests = b.addTest(.{ .root_module = mod });
+    const mod_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/tests.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "Pori", .module = mod },
+            },
+        }),
+    });
     mod_tests.root_module.link_libc = true;
     mod_tests.root_module.linkSystemLibrary("gtk4", .{});
     const exe_tests = b.addTest(.{ .root_module = exe.root_module });

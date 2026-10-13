@@ -16,7 +16,10 @@ test {
     _ = @import("helpers/options.zig");
     _ = @import("helpers/format.zig");
     _ = @import("services/privops.zig");
+    _ = @import("services/units.zig");
+    _ = @import("services/watch.zig");
     _ = @import("helpers/sysutil.zig");
+    _ = @import("actions.zig");
 }
 
 const app_id = "com.pori.app";
