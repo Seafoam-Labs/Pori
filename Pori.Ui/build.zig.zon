@@ -1,7 +1,7 @@
 .{
     .name = .Pori,
     .version = "0.1.0",
-    .fingerprint = 0x80a59e2b2f41aba3, // Changing this has security and trust implications.
+    .fingerprint = 0x80a59e2b2f41aba3,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .gobject = .{

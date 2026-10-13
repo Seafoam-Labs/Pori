@@ -4,6 +4,7 @@ const gio = Pori.gio;
 const glib = Pori.glib;
 const dbus = @import("../helpers/dbus.zig");
 const sysutil = @import("../helpers/sysutil.zig");
+const devices = @import("devices.zig");
 
 pub const MountUnit = struct {
     name: []const u8,
@@ -21,7 +22,79 @@ pub const MountUnit = struct {
         if (self.active_state.len == 0) return "unknown";
         return self.active_state;
     }
+
+    pub fn isActive(self: MountUnit) bool {
+        return std.mem.eql(u8, self.active_state, "active");
+    }
+
+    pub fn matchesDevice(self: MountUnit, dev: devices.Device) bool {
+        if (self.what.len > 0) {
+            var suffix: [160]u8 = undefined;
+            if (std.fmt.bufPrint(&suffix, "/by-uuid/{s}", .{dev.uuid})) |s| {
+                if (endsWithIgnoreCase(self.what, s)) return true;
+            } else |_| {}
+            if (std.mem.eql(u8, std.fs.path.basename(self.what), std.fs.path.basename(dev.dev))) return true;
+        }
+        if (self.where.len > 0) {
+            for (dev.mount_points) |mp| {
+                if (std.mem.eql(u8, mp, self.where)) return true;
+            }
+        }
+        return false;
+    }
 };
+
+fn endsWithIgnoreCase(haystack: []const u8, needle: []const u8) bool {
+    if (needle.len > haystack.len) return false;
+    return std.ascii.eqlIgnoreCase(haystack[haystack.len - needle.len ..], needle);
+}
+
+test "matchesDevice accepts by-uuid, device node and mount point spellings" {
+    const dev = devices.Device{
+        .name = "sda1",
+        .path = "/org/freedesktop/UDisks2/block_devices/sda1",
+        .dev = "/dev/sda1",
+        .fs_type = "ext4",
+        .fs_version = "",
+        .label = "Games",
+        .uuid = "1a2b-3c4d",
+        .size = 0,
+        .read_only = false,
+        .mount_points = &.{"/home/caro/mnt/games"},
+        .parent = "sda",
+        .parent_size = 0,
+        .table_type = "gpt",
+        .partition_number = 1,
+        .partition_count = 2,
+    };
+    const base = MountUnit{
+        .name = "home-caro-mnt-games.mount",
+        .description = "",
+        .load_state = "",
+        .active_state = "active",
+        .sub_state = "",
+        .what = "",
+        .where = "",
+        .options = "",
+        .fs_type = "",
+        .unit_file_state = "",
+    };
+
+    var u = base;
+    u.what = "/dev/disk/by-uuid/1A2B-3C4D";
+    try std.testing.expect(u.matchesDevice(dev));
+
+    u.what = "/dev/sda1";
+    try std.testing.expect(u.matchesDevice(dev));
+
+    u.what = "";
+    u.where = "/home/caro/mnt/games";
+    try std.testing.expect(u.matchesDevice(dev));
+
+    u.what = "/dev/disk/by-uuid/ffff-0000";
+    u.where = "/mnt/other";
+    try std.testing.expect(!u.matchesDevice(dev));
+}
 
 const systemd_name = "org.freedesktop.systemd1";
 const manager_path = "/org/freedesktop/systemd1";
@@ -190,6 +263,17 @@ pub fn listEtcMountUnits(arena: std.mem.Allocator) ![][]const u8 {
         try out.append(arena, name);
     }
     std.mem.sort([]const u8, out.items, {}, sliceLessThan);
+    return out.items;
+}
+
+pub fn listManaged(arena: std.mem.Allocator) ![]MountUnit {
+    const names = try listEtcMountUnits(arena);
+    var out: std.ArrayList(MountUnit) = .empty;
+    for (names) |name| {
+        if (try unitInfo(arena, name)) |unit| {
+            try out.append(arena, unit);
+        }
+    }
     return out.items;
 }
 

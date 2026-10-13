@@ -34,3 +34,66 @@
     font-size: 0.85em;
     background-color: alpha(@accent_bg_color, 0.25);
 }
+
+.state-badge {
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 0.85em;
+    background-color: alpha(currentColor, 0.10);
+}
+
+.warn-badge {
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 0.85em;
+    color: #d29922;
+    background-color: alpha(#d29922, 0.18);
+}
+
+.warning-text {
+    color: #d29922;
+}
+
+.pori-list {
+    background-color: transparent;
+}
+
+.pori-list row {
+    border-radius: 8px;
+}
+
+/* Tree guide: the vertical segment down a disk's children, and the elbow
+   turning into each child row. Contiguous rows join into one line. */
+.pori-guide {
+    border-left: 1px solid alpha(currentColor, 0.25);
+}
+
+.pori-guide-elbow {
+    background-color: alpha(currentColor, 0.25);
+}
+
+.pori-section {
+    font-weight: bold;
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+.pori-group {
+    font-weight: bold;
+    font-size: 0.85em;
+    opacity: 0.65;
+}
+
+.row-dot {
+    border-radius: 999px;
+    min-width: 8px;
+    min-height: 8px;
+}
+
+.row-dot-mounted {
+    background-color: #57ab5a;
+}
+
+.row-dot-idle {
+    background-color: alpha(currentColor, 0.25);
+}

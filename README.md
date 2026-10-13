@@ -14,7 +14,6 @@ Pori (short for Porifera) is a modern Systemd Mount Manager designed to make mou
 * **Privileged Operations**: authentication via polkit (`pkexec`) — no passwords in the app.
 
 ## Future Features
-* Wiping / formatting drives (UDisks2)
 * Mounting network devices
 * `.automount` (mount on first access) support
 

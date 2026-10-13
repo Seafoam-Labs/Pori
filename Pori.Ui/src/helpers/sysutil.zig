@@ -181,7 +181,6 @@ test "listDir finds files in a directory" {
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena.deinit();
 
-    // Build a temp directory with a couple of known files.
     const rc = system("rm -rf /tmp/pori-listdir-test && mkdir -p /tmp/pori-listdir-test && touch /tmp/pori-listdir-test/a.mount /tmp/pori-listdir-test/b.txt");
     try std.testing.expectEqual(@as(c_int, 0), rc);
     defer _ = system("rm -rf /tmp/pori-listdir-test");
