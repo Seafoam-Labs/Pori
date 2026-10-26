@@ -301,11 +301,13 @@ pub fn showMountOptions(
     gtk.Box.append(button_box, ui.widget(cancel));
     gtk.Box.append(button_box, ui.widget(confirm));
 
+    const cap = scrollCap(parent);
     const scrolled = gtk.ScrolledWindow.new();
     ui.widget(scrolled).setHexpand(1);
     ui.widget(scrolled).setVexpand(1);
+    ui.widget(scrolled).setSizeRequest(-1, @min(360, cap));
     scrolled.setPolicy(.never, .automatic);
-    scrolled.setMaxContentHeight(scrollCap(parent));
+    scrolled.setMaxContentHeight(cap);
     scrolled.setChild(ui.widget(content));
 
     const outer = gtk.Box.new(.vertical, 0);
