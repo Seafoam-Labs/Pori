@@ -17,10 +17,11 @@ jobs:
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --needed --noconfirm zig base-devel gtk4 glibc git curl pkgconf
+          pacman -S --needed --noconfirm base-devel gtk4 glibc git curl pkgconf
 
       # Checkout only after git is installed in the container.
       - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-zig
 
       - name: Build Pori.Ui
         run: |
