@@ -1,4 +1,5 @@
 const std = @import("std");
+const sysutil = @import("sysutil.zig");
 const Pori = @import("Pori");
 const gtk = Pori.gtk;
 const glib = Pori.glib;
@@ -28,13 +29,13 @@ fn scratchAlloc() std.mem.Allocator {
 }
 
 pub fn z(s: []const u8) [:0]const u8 {
-    return scratchAlloc().dupeZ(u8, s) catch "";
+    return sysutil.dupeZ(scratchAlloc(), s) catch "";
 }
 
 pub fn zFmt(comptime fmt_str: []const u8, args: anytype) [:0]const u8 {
     const alloc = scratchAlloc();
     const s = std.fmt.allocPrint(alloc, fmt_str, args) catch "";
-    return alloc.dupeZ(u8, s) catch "";
+    return sysutil.dupeZ(alloc, s) catch "";
 }
 
 pub fn idle(comptime T: type, comptime f: fn (*T) void, data: *T) void {

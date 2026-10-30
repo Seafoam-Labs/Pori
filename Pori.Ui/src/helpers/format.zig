@@ -1,7 +1,22 @@
 const std = @import("std");
-const c = @cImport({
-    @cInclude("sys/statvfs.h");
-});
+
+// glibc's struct statvfs on 64-bit; only the f_frsize..f_bavail fields are read.
+const Statvfs = extern struct {
+    f_bsize: c_ulong,
+    f_frsize: c_ulong,
+    f_blocks: c_ulong,
+    f_bfree: c_ulong,
+    f_bavail: c_ulong,
+    f_files: c_ulong,
+    f_ffree: c_ulong,
+    f_favail: c_ulong,
+    f_fsid: [8]u8,
+    f_flag: c_ulong,
+    f_namemax: c_ulong,
+    __f_spare: [6]c_int,
+};
+
+extern "c" fn statvfs(path: [*:0]const u8, buf: *Statvfs) c_int;
 
 pub fn humanSize(buf: []u8, bytes: u64) []const u8 {
     const units = "KMGTPE";
@@ -33,8 +48,8 @@ pub fn fsUsage(path: []const u8) ?FsUsage {
     @memcpy(path_buf[0..path.len], path);
     path_buf[path.len] = 0;
 
-    var st: c.struct_statvfs = undefined;
-    if (c.statvfs(path_buf[0..path.len :0].ptr, &st) != 0) return null;
+    var st: Statvfs = undefined;
+    if (statvfs(path_buf[0..path.len :0].ptr, &st) != 0) return null;
 
     const block: u64 = @intCast(st.f_frsize);
     const total = st.f_blocks * block;

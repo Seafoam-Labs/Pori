@@ -435,11 +435,13 @@ fn destructiveShell(
     b_w.setMarginStart(20);
     b_w.setMarginEnd(20);
 
+    const cap = scrollCap(parent);
     const scrolled = gtk.ScrolledWindow.new();
     ui.widget(scrolled).setHexpand(1);
     ui.widget(scrolled).setVexpand(1);
+    ui.widget(scrolled).setSizeRequest(-1, @min(360, cap));
     scrolled.setPolicy(.never, .automatic);
-    scrolled.setMaxContentHeight(scrollCap(parent));
+    scrolled.setMaxContentHeight(cap);
     scrolled.setChild(ui.widget(content));
 
     const outer = gtk.Box.new(.vertical, 0);

@@ -1,6 +1,7 @@
 const std = @import("std");
 const unitname = @import("../helpers/unitname.zig");
 const sysutil = @import("../helpers/sysutil.zig");
+const env = @import("../helpers/env.zig");
 
 pub const OpResult = struct {
     ok: bool,
@@ -46,6 +47,18 @@ fn buildUnitContent(arena: std.mem.Allocator, description: []const u8, uuid: []c
     , .{ description, uuid, path, fs_type, options });
 }
 
+fn chownLine(arena: std.mem.Allocator, path: []const u8, home: ?[]const u8, uid: u32, gid: u32) ![]const u8 {
+    const h = home orelse return "";
+    if (path.len <= h.len + 1) return "";
+    if (!std.mem.startsWith(u8, path, h)) return "";
+    if (path[h.len] != '/') return "";
+    return std.fmt.allocPrint(arena, "chown {d}:{d} {s}", .{ uid, gid, try shQuote(arena, path) });
+}
+
+fn buildChownLine(arena: std.mem.Allocator, path: []const u8) ![]const u8 {
+    return chownLine(arena, path, env.get("HOME"), std.c.getuid(), std.c.getgid());
+}
+
 var temp_counter: std.atomic.Value(u64) = std.atomic.Value(u64).init(0);
 
 fn writeTempFile(arena: std.mem.Allocator, content: []const u8) ![]const u8 {
@@ -76,13 +89,15 @@ pub fn createMountUnit(arena: std.mem.Allocator, description: []const u8, uuid: 
     const tmp = try writeTempFile(arena, content);
     defer sysutil.deleteFile(tmp);
 
+    const path = if (std.mem.startsWith(u8, mount_point, "/")) mount_point else try std.fmt.allocPrint(arena, "/{s}", .{mount_point});
     const script = try std.fmt.allocPrint(arena,
         \\set -e
         \\cp {s} '/etc/systemd/system/{s}'
         \\chmod 644 '/etc/systemd/system/{s}'
         \\systemctl daemon-reload
         \\systemctl enable --now '{s}'
-    , .{ try shQuote(arena, tmp), unit, unit, unit });
+        \\{s}
+    , .{ try shQuote(arena, tmp), unit, unit, unit, try buildChownLine(arena, path) });
 
     return runPrivileged(arena, &.{ "/usr/bin/sh", "-c", script });
 }
@@ -122,6 +137,9 @@ pub fn editMountUnit(arena: std.mem.Allocator, old_unit: []const u8, description
         \\sed -n '/^\[Mount\]$/,$p' {s} | tail -n +2 >> {s}
     , .{ old_path, try shQuote(arena, tmp), try shQuote(arena, spliced), old_path, try shQuote(arena, spliced), try shQuote(arena, tmp), try shQuote(arena, spliced) });
 
+    const path = if (std.mem.startsWith(u8, mount_point, "/")) mount_point else try std.fmt.allocPrint(arena, "/{s}", .{mount_point});
+    const chown = try buildChownLine(arena, path);
+
     var script: []const u8 = undefined;
     if (std.mem.eql(u8, old_unit, new_unit)) {
         script = try std.fmt.allocPrint(arena,
@@ -131,7 +149,8 @@ pub fn editMountUnit(arena: std.mem.Allocator, old_unit: []const u8, description
             \\chmod 644 {s}
             \\systemctl daemon-reload
             \\if systemctl is-active --quiet '{s}'; then systemctl restart '{s}'; else systemctl enable --now '{s}'; fi
-        , .{ splice, try shQuote(arena, spliced), old_path, old_path, new_unit, new_unit, new_unit });
+            \\{s}
+        , .{ splice, try shQuote(arena, spliced), old_path, old_path, new_unit, new_unit, new_unit, chown });
     } else {
         script = try std.fmt.allocPrint(arena,
             \\set -e
@@ -142,7 +161,8 @@ pub fn editMountUnit(arena: std.mem.Allocator, old_unit: []const u8, description
             \\chmod 644 '/etc/systemd/system/{s}'
             \\systemctl daemon-reload
             \\systemctl enable --now '{s}'
-        , .{ splice, old_unit, old_path, try shQuote(arena, spliced), new_unit, new_unit, new_unit });
+            \\{s}
+        , .{ splice, old_unit, old_path, try shQuote(arena, spliced), new_unit, new_unit, new_unit, chown });
     }
 
     return runPrivileged(arena, &.{ "/usr/bin/sh", "-c", script });
@@ -163,6 +183,20 @@ test "shQuote escapes single quotes" {
     defer arena.deinit();
     const quoted = try shQuote(arena.allocator(), "it's a trap");
     try std.testing.expectEqualStrings("'it'\\''s a trap'", quoted);
+}
+
+test "chown line only fires inside the caller's home" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    const inside = try chownLine(a, "/home/caro/mnt/games", "/home/caro", 1000, 1001);
+    try std.testing.expectEqualStrings("chown 1000:1001 '/home/caro/mnt/games'", inside);
+
+    try std.testing.expectEqualStrings("", try chownLine(a, "/mnt/games", "/home/caro", 1000, 1001));
+    try std.testing.expectEqualStrings("", try chownLine(a, "/home/carol/mnt", "/home/caro", 1000, 1001));
+    try std.testing.expectEqualStrings("", try chownLine(a, "/home/caro", "/home/caro", 1000, 1001));
+    try std.testing.expectEqualStrings("", try chownLine(a, "/home/caro/mnt", null, 1000, 1001));
 }
 
 test "unit content layout matches systemd expectations" {

@@ -23,6 +23,12 @@ pub const ExecResult = struct {
     err: []const u8,
 };
 
+pub fn dupeZ(alloc: std.mem.Allocator, s: []const u8) ![:0]u8 {
+    const buf = try alloc.allocSentinel(u8, s.len, 0);
+    @memcpy(buf[0..s.len], s);
+    return buf;
+}
+
 pub fn runCommand(arena: std.mem.Allocator, argv: []const []const u8) !ExecResult {
     var path_buf: [posix.PATH_MAX:0]u8 = undefined;
     const prog = if (argv.len > 0 and argv[0].len < path_buf.len) blk: {
@@ -52,7 +58,7 @@ pub fn runCommand(arena: std.mem.Allocator, argv: []const []const u8) !ExecResul
 
         const argv_c = arena.alloc(?[*:0]const u8, argv.len + 1) catch std.process.exit(127);
         for (argv, 0..) |arg, i| {
-            argv_c[i] = arena.dupeZ(u8, arg) catch std.process.exit(127);
+            argv_c[i] = dupeZ(arena, arg) catch std.process.exit(127);
         }
         argv_c[argv.len] = null;
         _ = execv(prog.ptr, argv_c.ptr);
