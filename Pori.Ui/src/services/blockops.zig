@@ -2,6 +2,7 @@ const std = @import("std");
 const Pori = @import("Pori");
 const glib = Pori.glib;
 const dbus = @import("../helpers/dbus.zig");
+const sysutil = @import("../helpers/sysutil.zig");
 const devices = @import("devices.zig");
 
 const udisks_name = "org.freedesktop.UDisks2";
@@ -27,7 +28,7 @@ pub fn supportedFilesystems(arena: std.mem.Allocator) []const []const u8 {
 
     var out: std.ArrayList([]const u8) = .empty;
     for (filesystem_candidates) |fs| {
-        const z = arena.dupeZ(u8, fs) catch continue;
+        const z = sysutil.dupeZ(arena, fs) catch continue;
         const res = dbus.call(conn, udisks_name, manager_path, manager_iface, "CanFormat", dbus.stringTuple(z)) orelse continue;
         defer res.unref();
 
@@ -62,21 +63,21 @@ pub fn format(
     entries.append(arena, dbus.optionEntry("erase", glib.Variant.newBoolean(@as(c_int, @intFromBool(erase))))) catch return failed("out of memory");
     entries.append(arena, dbus.optionEntry("no-block", glib.Variant.newBoolean(0))) catch return failed("out of memory");
     if (label.len > 0) {
-        const z = arena.dupeZ(u8, label) catch return failed("out of memory");
+        const z = sysutil.dupeZ(arena, label) catch return failed("out of memory");
         entries.append(arena, dbus.optionEntry("label", glib.Variant.newString(z))) catch return failed("out of memory");
     }
     if (whole_disk) {
         entries.append(arena, dbus.optionEntry("update-partition-type", glib.Variant.newBoolean(1))) catch return failed("out of memory");
     }
 
-    const path_z = arena.dupeZ(u8, path) catch return failed("out of memory");
-    const fs_z = arena.dupeZ(u8, fs_type) catch return failed("out of memory");
+    const path_z = sysutil.dupeZ(arena, path) catch return failed("out of memory");
+    const fs_z = sysutil.dupeZ(arena, fs_type) catch return failed("out of memory");
     return call(arena, path_z, block_iface, "Format", tuple2(glib.Variant.newString(fs_z), dbus.optionsArray(entries.items)));
 }
 
 pub fn createPartitionTable(arena: std.mem.Allocator, path: []const u8, table_type: []const u8) Result {
-    const path_z = arena.dupeZ(u8, path) catch return failed("out of memory");
-    const z = arena.dupeZ(u8, table_type) catch return failed("out of memory");
+    const path_z = sysutil.dupeZ(arena, path) catch return failed("out of memory");
+    const z = sysutil.dupeZ(arena, table_type) catch return failed("out of memory");
     return call(arena, path_z, table_iface, "Create", tuple2(glib.Variant.newString(z), dbus.optionsArray(&.{})));
 }
 
@@ -89,8 +90,8 @@ pub fn createPartition(
     fs_type: []const u8,
     label: []const u8,
 ) Result {
-    const path_z = arena.dupeZ(u8, disk_path) catch return failed("out of memory");
-    const name_z = arena.dupeZ(u8, name) catch return failed("out of memory");
+    const path_z = sysutil.dupeZ(arena, disk_path) catch return failed("out of memory");
+    const name_z = sysutil.dupeZ(arena, name) catch return failed("out of memory");
     var children = [_]*glib.Variant{
         glib.Variant.newUint64(offset),
         glib.Variant.newUint64(size),
@@ -119,12 +120,12 @@ pub fn createPartition(
 }
 
 pub fn deletePartition(arena: std.mem.Allocator, path: []const u8) Result {
-    const path_z = arena.dupeZ(u8, path) catch return failed("out of memory");
+    const path_z = sysutil.dupeZ(arena, path) catch return failed("out of memory");
     return call(arena, path_z, partition_iface, "Delete", tuple1(dbus.optionsArray(&.{})));
 }
 
 pub fn resizePartition(arena: std.mem.Allocator, path: []const u8, size: u64) Result {
-    const path_z = arena.dupeZ(u8, path) catch return failed("out of memory");
+    const path_z = sysutil.dupeZ(arena, path) catch return failed("out of memory");
     var children = [_]*glib.Variant{
         glib.Variant.newUint64(size),
         dbus.optionsArray(&.{}),

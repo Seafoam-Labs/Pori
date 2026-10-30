@@ -1,7 +1,7 @@
 # Maintainer: Zoey Bauer <zoey.erin.bauer@gmail.com>
 # Maintainer: Caroline Snyder <hirpeng@gmail.com>
 pkgname=pori
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="Pori: Systemd Mount Manager"
 arch=('x86_64')
@@ -16,7 +16,7 @@ depends=(
     'polkit'
     'udisks2'
 )
-makedepends=('zig>=0.16')
+makedepends=('zig>=0.17')
 
 # Source tarball from GitHub release
 source=("${pkgname}-${pkgver}.tar.gz::https://github.com/Seafoam-Labs/Pori/archive/v${pkgver}.tar.gz")

@@ -232,6 +232,13 @@ fn runOp(op: *Op) void {
         .remove => |r| privops.deleteMountUnit(alloc, r.unit) catch failed,
     };
 
+    // finishOp runs on the UI thread after this arena is gone, so the result
+    // strings must outlive it; finishOp frees them via freeOwned.
+    if (op.result) |*r| {
+        r.output = std.heap.page_allocator.dupe(u8, r.output) catch "";
+        r.err = std.heap.page_allocator.dupe(u8, r.err) catch "";
+    }
+
     ui.idle(Op, finishOp, op);
 }
 
@@ -254,6 +261,8 @@ fn finishOp(op: *Op) void {
     op.reporter.setBusy(op.reporter.ud, false);
     op.reporter.report(op.reporter.ud, outcome);
 
+    freeOwned(res.output);
+    freeOwned(res.err);
     freeRequest(op.req);
     std.heap.page_allocator.destroy(op);
 }
