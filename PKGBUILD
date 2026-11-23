@@ -29,7 +29,6 @@ build() {
   zig build --verbose \
     --prefix "$srcdir/Pori-${pkgver}/out" \
     --cache-dir "$srcdir/zig-cache" \
-    --global-cache-dir "$srcdir/zig-global-cache" \
     -Dcpu=baseline \
     -Doptimize=ReleaseSafe
 }
